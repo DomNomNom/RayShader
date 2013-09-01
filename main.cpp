@@ -70,16 +70,15 @@ void display() {
 
     if (shadeTrace) {
         shader.bind();
-        // printf("unicorn location: %d\n", glGetUniformLocation(shader.id(), "balls[0].pos"));
 
         glUniform1i(glGetUniformLocation(shader.id(), "numballs"), numballs);
         glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"), numballs, &(ball_pos[0].x));
         glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), numballs, &(ball_radius[0]));
-        // glUniformBlockBinding(shader.id(), glGetUniformLocation(shader.id(), "balls[0].pos"), numballs, &(balls[0].pos.x));
         glUniform2f(glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
 
         glColor3f(1,0,0);
         glBegin(GL_TRIANGLES);
+            // two triangles that cover the screen
             glVertex3f(-1,-1, 0.0);
             glVertex3f( 1,-1, 0.0);
             glVertex3f(-1, 1, 0.0);
@@ -115,7 +114,6 @@ void setupLighting() {
     glPushMatrix();
         glRotatef(60, 0, 0, 1);
         glRotatef(30, 0, 1, 0);
-        // glRotatef(90, 0, 1, 0);
         glLightfv(GL_LIGHT0, GL_POSITION, light_direction);
         glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
         glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
@@ -139,7 +137,7 @@ void keyHander(unsigned char key, int, int) {
             glutDestroyWindow(window);
             exit(0);
             break;
-        case 13:
+        case 13:  // Enter -> refresh shader
             initShader();
             break;
         case 's':
@@ -165,8 +163,8 @@ int main(int argc, char** argv) {
     window = glutCreateWindow("RayShader");
 
     glutDisplayFunc(display);
+    // glutIdleFunc(display);
     // glutReshapeFunc();
-    // glutIdleFunc();
     // glutMouseFunc();
     glutKeyboardFunc(keyHander);
     glutMotionFunc(mouseMoveHander);

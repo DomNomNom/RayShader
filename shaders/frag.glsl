@@ -61,35 +61,10 @@ ret trace(vec3 eye, vec3 dir) {
             true
         );
 
-        // return phong(dir, normal);
-
-
-        // vec4 ball = balls[bestBall];
-        // float offset = dot(eye-ball.xyz, dir);
-        // vec3 projection = (eye-ball.xyz) - offset*dir;
-        // // projection = eye-ball.xyz;
-        // // projection.z=0.0;
-        // float minDist = length(projection);
-        // if (minDist <= ball.w) {
-        //     vec3 sphereIntersect = (ball.xyz+projection) - sqrt((ball.w*ball.w)-(minDist*minDist)) * dir;
-        //     vec3 normal = normalize(sphereIntersect - ball.xyz);
-        //     return phong(dir, normal);
-        //     // return vec4(
-        //     //     0,
-        //     //     0,
-        //     //     1.0-length(projection)/ball.w, // (sqrt((ball.w*ball.w)/(minDist*minDist)) * 0.2 * dir).z,
-        //     //     1.0
-        //     // );
-        //     // return vec4(distance(sphereIntersect, eye)*0.5, 0.5, 0.5, 0.0);
-        //     // return vec4(minDist/ball.w, 0.5, 0.5, 0.0);
-        // }
-
-        // // return vec4(0.5, 0.5, 0.5, 0.0);
     }
 
     return ret(
         specular(dir),
-        // vec4(0.0, 0.0, 0.0, 0.0),
         vec3(0.0, 0.0, 0.0),
         vec3(0.0, 0.0, 0.0),
         false
