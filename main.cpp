@@ -75,6 +75,7 @@ float ball_radius[] = {  // radii
     0.25,
     0.25,
 };
+float modelScale = 0.7;
 
 
 
@@ -116,13 +117,17 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
+    modelScale = mouse_x+0.1f;
+    printf("%f\n", modelScale);
+    for (int i=0; i<numballs; ++i)
+        ball_radius[i] = mouse_y;
     // ball_pos[0].x = openglCoords(mouse_x);
     // ball_pos[0].y = -openglCoords(mouse_y);
     // printf("%f %f\n", balls[0], balls[1]);
 
     glm::mat4 transform = glm::mat4(1.0f);
     transform = glm::rotate(transform, millis * 0.05f, glm::vec3(0.0f, 1.0f, 0.0f));
-    transform = glm::scale(transform, glm::vec3(0.7f, 0.7f, 0.7f));
+    transform = glm::scale(transform, glm::vec3(modelScale, modelScale, modelScale));
     applyView(transform);
 
     if (shadeTrace) {
