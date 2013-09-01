@@ -1,3 +1,6 @@
+
+
+
 varying vec3 vertex_light_position;
 varying vec3 vertex_normal;
 varying vec3 v;
@@ -7,8 +10,7 @@ varying vec4 position;
 
 uniform vec2 mouse;
 uniform float time;
-uniform int drift;
-uniform vec4 balls[2];
+uniform vec4 balls[6];
 uniform vec4 omg;
 
 

@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <GL/glut.h>
 
+#include <glm/glm.hpp>
+// #include <glm/gtc/matrix_projection.hpp>
+// #include <glm/gtc/matrix_transform.hpp>
+
 #include "time.h"
 #include "shader.h"
 #include "math.h"
@@ -19,14 +23,23 @@ float mouse_y = 0.0;
 
 bool shadeTrace = true;
 
+
 int numballs = 6;
-GLfloat balls[] = {
-    -.0, -.89, 0.0, 0.3, // 0.0, 0.0, 0.0, 0.3,
-    0.0, -.0, 0.3, 0.3,
-    0.5, 0.5, 0.0, 0.2,
-    0.3, -.5, -0.3, 0.2,
-    -.3, -.5, -0.3, 0.2,
-    -.3, 0.5, -0.3, 0.2,
+glm::vec4 ball_pos[] = {  // positions
+    glm::vec4(1.0, -.9, 0.0, 1.0),
+    glm::vec4(0.0, -.0, 0.3, 1.0),
+    glm::vec4(0.5, 0.5, -.3, 1.0),
+    glm::vec4(0.3, -.5, -.3, 1.0),
+    glm::vec4(-.3, -.5, -.3, 1.0),
+    glm::vec4(-.3, 0.5, -.3, 1.0),
+};
+float ball_radius[] {  // radii
+    0.3,
+    0.3,
+    0.2,
+    0.2,
+    0.2,
+    0.2,
 };
 
 float light_direction[] = {1.0f, 0.0f, 0.0f};
@@ -51,14 +64,18 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    balls[0] = openglCoords(mouse_x);
-    balls[1] = -openglCoords(mouse_y);
+    ball_pos[0].x = openglCoords(mouse_x);
+    ball_pos[0].y = -openglCoords(mouse_y);
     // printf("%f %f\n", balls[0], balls[1]);
 
     if (shadeTrace) {
         shader.bind();
+        // printf("unicorn location: %d\n", glGetUniformLocation(shader.id(), "balls[0].pos"));
+
         glUniform1i(glGetUniformLocation(shader.id(), "numballs"), numballs);
-        glUniform4fv(glGetUniformLocation(shader.id(), "balls"), numballs, balls);
+        glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"), numballs, &(ball_pos[0].x));
+        glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), numballs, &(ball_radius[0]));
+        // glUniformBlockBinding(shader.id(), glGetUniformLocation(shader.id(), "balls[0].pos"), numballs, &(balls[0].pos.x));
         glUniform2f(glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
 
         glColor3f(1,0,0);
@@ -79,11 +96,11 @@ void display() {
         for (int i=0; i<numballs; ++i) {
             glPushMatrix();
                 glTranslatef(
-                    balls[4*i+0],
-                    balls[4*i+1],
-                    balls[4*i+2]
+                    ball_pos[i].x,
+                    ball_pos[i].y,
+                    ball_pos[i].z
                 );
-                glutSolidSphere(balls[4*i+3], 32, 32);
+                glutSolidSphere(ball_radius[i], 32, 32);
             glPopMatrix();
         }
         glDisable(GL_LIGHTING);
@@ -108,15 +125,27 @@ void setupLighting() {
 }
 
 
+
+void initShader() {
+    shader.init(
+        "shaders/vert.glsl",
+        "shaders/frag.glsl"
+    );
+}
+
 void keyHander(unsigned char key, int, int) {
     switch (key) {
         case 27: // Escape -> exit
             glutDestroyWindow(window);
             exit(0);
             break;
+        case 13:
+            initShader();
+            break;
         case 's':
             shadeTrace = !shadeTrace;
             break;
+
     }
     glutPostRedisplay();
 }
@@ -125,7 +154,6 @@ void mouseMoveHander(int x, int y){
     mouse_y = y/(float)window_ht;
     glutPostRedisplay();
 }
-
 
 
 int main(int argc, char** argv) {
@@ -145,15 +173,9 @@ int main(int argc, char** argv) {
     glutPassiveMotionFunc(mouseMoveHander);
 
 
-    shader.init(
-        "shaders/vert.glsl",
-        "shaders/frag.glsl"
-    );
-
-
+    initShader();
     setupLighting();
     glutMainLoop();
-
 
     return 0;
 }

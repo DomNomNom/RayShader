@@ -6,8 +6,8 @@ varying vec4 position;
 
 uniform vec2 mouse;
 uniform float time;
-uniform bool drift;
-uniform vec4 balls[20];
+uniform vec4 ball_pos[20];  // positions
+uniform float ball_radius[20]; // radii
 uniform int numballs;
 
 vec4 specular(vec3 dir) {
@@ -16,38 +16,6 @@ vec4 specular(vec3 dir) {
         pow(max(dot(dir, vertex_light_position), 0.5), 50.0) *
         vec4(1.0, 1.0, 1.0, 0.0)
     ), 0.0, 1.0);
-}
-
-vec4 phong(vec3 view, vec3 normal) {
-
-    // gl_LightSourceParameters light = gl_LightSource[0];
-    // vec4 diffuse = gl_FrontMaterial.diffuse * diffuse_value;
-
-    vec3 L = normalize(gl_LightSource[0].position.xyz); // -v.xyz
-    vec3 E = normalize(view).xyz; // we are in Eye Coordinates, so EyePos is (0,0,0)
-    vec3 R = normalize(reflect(L,normal));
-
-    // Ambient:
-    float Iamb = 0.05;
-
-    // Diffuse:
-    float Idiff = dot(normal,L);
-
-    // Specular:
-    float Ispec = 1.0 * pow(max(dot(R,E),0.5),50.0); //gl_FrontMaterial.shininess
-    // if (Idiff < 0.0) Ispec = 0.0; // don't let specular light through to the other side
-
-    Iamb  = clamp(Iamb,  0.0, 1.0);
-    Idiff = clamp(Idiff, 0.0, 1.0);
-    Ispec = clamp(Ispec, 0.0, 1.0);
-
-    return clamp(
-        Iamb    * vec4(1.0, 0.0, 0.0, 0.0) +
-        Idiff   * vec4(0.8, 0.0, 0.0, 0.0) +
-        Ispec   * vec4(1.0, 1.0, 1.0, 0.0)
-
-        , 0.0, 1.0
-    );
 }
 
 
@@ -65,11 +33,13 @@ ret trace(vec3 eye, vec3 dir) {
 
     // find the best ball
     for (int i=0; i<numballs; ++i) {
-        vec4 ball = balls[i];
-        vec3 projection = (eye-ball.xyz) - dot(eye-ball.xyz, dir)*dir;
+        vec4 pos = ball_pos[i];
+        float radius = ball_radius[i];
+
+        vec3 projection = (eye-pos.xyz) - dot(eye-pos.xyz, dir)*dir;
         float minDist = length(projection);
-        if (minDist <= ball.w) {
-            vec3 sphereIntersect = (ball.xyz+projection) - sqrt((ball.w*ball.w)-(minDist*minDist)) * dir;
+        if (minDist <= radius) {
+            vec3 sphereIntersect = (pos.xyz+projection) - sqrt((radius*radius)-(minDist*minDist)) * dir;
             float offset = dot(eye-sphereIntersect, dir);
             if (offset< 0.0 && (bestBall < 0 || offset > bestOffset)) {
                 bestBall = i;
@@ -81,12 +51,10 @@ ret trace(vec3 eye, vec3 dir) {
 
 
     if (bestBall >= 0) {// && abs(eye.z+1.0) < 0.001) {
-        vec3 normal = normalize(bestSphereIntersect - balls[bestBall].xyz);
+        vec3 normal = normalize(bestSphereIntersect - ball_pos[bestBall].xyz);
         vec3 reflected = normalize(reflect(dir,normal));
         return ret(
-            vec4(0.5, 0.0, 0.0, 0.0) * clamp(dot(normal, vertex_light_position), 0.0, 1.0)
-            // + specular(reflected)
-            ,
+            vec4(0.5, 0.0, 0.0, 0.0) * clamp(dot(normal, vertex_light_position), 0.0, 1.0),
 
             bestSphereIntersect,
             reflected,
