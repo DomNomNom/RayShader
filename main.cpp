@@ -27,23 +27,55 @@ float millis = 0;
 bool shadeTrace = true;
 
 
-int numballs = 6;
+// int numballs = 6;
+// glm::vec4 ball_pos[] = {  // positions
+//     glm::vec4(1.0, -.9, 0.0, 1.0),
+//     glm::vec4(0.0, -.0, 0.3, 1.0),
+//     glm::vec4(0.5, 0.5, -.3, 1.0),
+//     glm::vec4(0.3, -.5, -.3, 1.0),
+//     glm::vec4(-.3, -.5, -.3, 1.0),
+//     glm::vec4(-.3, 0.5, -.3, 1.0),
+// };
+// float ball_radius[] = {  // radii
+//     0.3,
+//     0.3,
+//     0.2,
+//     0.2,
+//     0.2,
+//     0.2,
+// };
+
+
+int numballs = 12;
 glm::vec4 ball_pos[] = {  // positions
-    glm::vec4(1.0, -.9, 0.0, 1.0),
-    glm::vec4(0.0, -.0, 0.3, 1.0),
-    glm::vec4(0.5, 0.5, -.3, 1.0),
-    glm::vec4(0.3, -.5, -.3, 1.0),
-    glm::vec4(-.3, -.5, -.3, 1.0),
-    glm::vec4(-.3, 0.5, -.3, 1.0),
+    glm::vec4(0,                 -0.525731,          0.850651,  1.0),
+    glm::vec4(0.850651,           0,                 0.525731,  1.0),
+    glm::vec4(0.850651,           0,                -0.525731,  1.0),
+    glm::vec4(-0.850651,          0,                -0.525731,  1.0),
+    glm::vec4(-0.850651,          0,                 0.525731,  1.0),
+    glm::vec4(-0.525731,          0.850651,          0       ,  1.0),
+    glm::vec4(0.525731,           0.850651,          0       ,  1.0),
+    glm::vec4(0.525731,          -0.850651,          0       ,  1.0),
+    glm::vec4(-0.525731,         -0.850651,          0       ,  1.0),
+    glm::vec4(0,                 -0.525731,         -0.850651,  1.0),
+    glm::vec4(0,                  0.525731,         -0.850651,  1.0),
+    glm::vec4(0,                  0.525731,          0.850651,  1.0),
 };
 float ball_radius[] = {  // radii
-    0.3,
-    0.3,
-    0.2,
-    0.2,
-    0.2,
-    0.2,
+    0.25,
+    0.25,
+    0.25,
+    0.25,
+    0.25,
+    0.25,
+    0.25,
+    0.25,
+    0.25,
+    0.25,
+    0.25,
+    0.25,
 };
+
 
 
 float light_direction[] = {1.0f, 0.0f, 0.0f};
@@ -65,7 +97,7 @@ void applyView(glm::mat4 viewMatrix) {
     }
 }
 void undoView() {
-    applyView(glm::transpose(view));
+    applyView(glm::inverse(view));
 }
 
 
@@ -84,15 +116,14 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    ball_pos[0].x = openglCoords(mouse_x);
-    ball_pos[0].y = -openglCoords(mouse_y);
+    // ball_pos[0].x = openglCoords(mouse_x);
+    // ball_pos[0].y = -openglCoords(mouse_y);
     // printf("%f %f\n", balls[0], balls[1]);
 
-    applyView(glm::rotate(
-        glm::mat4(1.0f),
-        millis * 0.05f,
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    ));
+    glm::mat4 transform = glm::mat4(1.0f);
+    transform = glm::rotate(transform, millis * 0.05f, glm::vec3(0.0f, 1.0f, 0.0f));
+    transform = glm::scale(transform, glm::vec3(0.7f, 0.7f, 0.7f));
+    applyView(transform);
 
     if (shadeTrace) {
         shader.bind();

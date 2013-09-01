@@ -73,7 +73,7 @@ ret trace(vec3 eye, vec3 dir) {
 
 void main() {
     gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-    ret r = ret(gl_FragColor, vec3(v.xy, -1.0), vec3(0.0, 0.0, 1.0), true);
+    ret r = ret(gl_FragColor, vec3(0.0, 0.0, -2.0), normalize(vec3(v.xy, 2.0)), true);
 
     float bounce = 0.0; // actually a int
     while (r.hit && bounce < 30.0) {
