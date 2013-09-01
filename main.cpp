@@ -5,12 +5,14 @@
 #include <GL/glut.h>
 
 #include <glm/glm.hpp>
-// #include <glm/gtc/matrix_projection.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 // #include <glm/gtc/matrix_transform.hpp>
+// #include <glm/gtc/matrix_projection.hpp>
 
 #include "time.h"
 #include "shader.h"
 #include "math.h"
+
 
 Shader shader;
 
@@ -20,6 +22,7 @@ int window_ht = 600;
 
 float mouse_x = 0.0;
 float mouse_y = 0.0;
+float millis = 0;
 
 bool shadeTrace = true;
 
@@ -33,7 +36,7 @@ glm::vec4 ball_pos[] = {  // positions
     glm::vec4(-.3, -.5, -.3, 1.0),
     glm::vec4(-.3, 0.5, -.3, 1.0),
 };
-float ball_radius[] {  // radii
+float ball_radius[] = {  // radii
     0.3,
     0.3,
     0.2,
@@ -41,6 +44,7 @@ float ball_radius[] {  // radii
     0.2,
     0.2,
 };
+
 
 float light_direction[] = {1.0f, 0.0f, 0.0f};
 GLfloat light_ambient[]     = {0.1, 0.1, 0.1, 1.0};
@@ -53,6 +57,19 @@ GLfloat material_specular[] = {8.8, 8.8, 8.8, 1.0};
 GLfloat material_shininess[] = {89};
 
 
+glm::mat4 view = glm::mat4(1.0f);
+void applyView(glm::mat4 viewMatrix) {
+    view = viewMatrix;
+    for (int i=0; i<numballs; ++i) {
+        ball_pos[i] = view * ball_pos[i];
+    }
+}
+void undoView() {
+    applyView(glm::transpose(view));
+}
+
+
+
 float extremify(float val) {
     return pow(10*(val-0.5), 5);
 }
@@ -61,6 +78,9 @@ float openglCoords(float val) {
 }
 
 void display() {
+    millis += time_dt() * 1000;
+    // printf("time %f\n", millis);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
@@ -68,13 +88,19 @@ void display() {
     ball_pos[0].y = -openglCoords(mouse_y);
     // printf("%f %f\n", balls[0], balls[1]);
 
+    applyView(glm::rotate(
+        glm::mat4(1.0f),
+        millis * 0.05f,
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    ));
+
     if (shadeTrace) {
         shader.bind();
 
-        glUniform1i(glGetUniformLocation(shader.id(), "numballs"), numballs);
-        glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"), numballs, &(ball_pos[0].x));
+        glUniform1i( glGetUniformLocation(shader.id(), "numballs"),    numballs);
+        glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    numballs, &(ball_pos[0].x) );
         glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), numballs, &(ball_radius[0]));
-        glUniform2f(glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
+        glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
 
         glColor3f(1,0,0);
         glBegin(GL_TRIANGLES);
@@ -104,6 +130,8 @@ void display() {
         }
         glDisable(GL_LIGHTING);
     }
+
+    undoView();
 
     glutSwapBuffers();
 
@@ -163,7 +191,7 @@ int main(int argc, char** argv) {
     window = glutCreateWindow("RayShader");
 
     glutDisplayFunc(display);
-    // glutIdleFunc(display);
+    glutIdleFunc(display);
     // glutReshapeFunc();
     // glutMouseFunc();
     glutKeyboardFunc(keyHander);
