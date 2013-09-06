@@ -75,9 +75,8 @@ void main() {
     gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
     ret r = ret(gl_FragColor, vec3(0.0, 0.0, -2.0), normalize(vec3(v.xy, 2.0)), true);
 
-    float bounce = 0.0; // actually a int
-    while (r.hit && bounce < 30.0) {
-        bounce += 1.0;
+    
+    for (float bounce = 1.0; r.hit && bounce<30.0; bounce+=1.0) {
         r = trace(r.eye, r.dir);
 
         vec4 result = r.colour;
@@ -85,11 +84,14 @@ void main() {
             result += vec4(0.2, 0.0, 0.0, 0.0); // ambient
             if (! trace(r.eye, vertex_light_position).hit) // shadow
                 result += r.colour; // diffuse
-             result *= pow(0.50, bounce);
+            result *= pow(0.5, bounce);
         }
         else {
             result += r.colour; // specular
+            result *= pow(0.75, bounce); // it looks better if specular light bounces more
         }
+        // result = clamp(result, 0.0, 1.0);
+        
         gl_FragColor += result;// * pow(0.75, bounce);
 
     }

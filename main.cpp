@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <GL/glut.h>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 // #include <glm/gtc/matrix_transform.hpp>
 // #include <glm/gtc/matrix_projection.hpp>
 
@@ -118,7 +118,7 @@ void display() {
     glEnable(GL_DEPTH_TEST);
 
     modelScale = mouse_x+0.1f;
-    printf("%f\n", modelScale);
+    // printf("%f\n", modelScale);
     for (int i=0; i<numballs; ++i)
         ball_radius[i] = mouse_y;
     // ball_pos[0].x = openglCoords(mouse_x);
