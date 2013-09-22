@@ -20,8 +20,8 @@ GLuint window;
 int window_wd = 600;
 int window_ht = 600;
 
-float mouse_x = 0.0;
-float mouse_y = 0.0;
+float mouse_x = 0.5;
+float mouse_y = 0.25;
 float millis = 0;
 
 bool shadeTrace = true;
@@ -45,7 +45,14 @@ bool shadeTrace = true;
 //     0.2,
 // };
 
+int numTriangles = 1;
+glm::vec4 triangles[] = {
+    //  point A,                   B-A,                            C-A
+    glm::vec4(0.0, 0.0, 0.0, 1.0), glm::vec4(0.5, 0.5, 0.0, 0.0), glm::vec4(-0.5, 0.5, 0.0, 0.0),
+};
 
+// balls.
+// TODO move this to a external file
 int numballs = 12;
 glm::vec4 ball_pos[] = {  // positions
     glm::vec4(0,                 -0.525731,          0.850651,  1.0),
@@ -96,11 +103,24 @@ void applyView(glm::mat4 viewMatrix) {
     for (int i=0; i<numballs; ++i) {
         ball_pos[i] = view * ball_pos[i];
     }
+    for (int i=0; i<numTriangles*3; i+=3) {
+        triangles[i  ] = view * triangles[i  ];
+        triangles[i+1] = view * triangles[i+1];
+        triangles[i+2] = view * triangles[i+2];
+    }
 }
 void undoView() {
     applyView(glm::inverse(view));
 }
 
+void printVec(glm::vec4 *v){
+    printf(
+        "[%f %f %f]\n",
+        v->x,
+        v->y,
+        v->z
+    );
+}
 
 
 float extremify(float val) {
@@ -119,20 +139,29 @@ void display() {
 
     modelScale = mouse_x+0.1f;
     // printf("%f\n", modelScale);
-    for (int i=0; i<numballs; ++i)
-        ball_radius[i] = mouse_y;
     // ball_pos[0].x = openglCoords(mouse_x);
     // ball_pos[0].y = -openglCoords(mouse_y);
     // printf("%f %f\n", balls[0], balls[1]);
 
+    for (int i=0; i<numballs; ++i)
+        ball_radius[i] = mouse_y;
+
     glm::mat4 transform = glm::mat4(1.0f);
-    transform = glm::rotate(transform, millis * 0.05f, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    transform = glm::rotate(transform, mouse_x * 500.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+    // transform = glm::rotate(transform, millis * 0.05f, glm::vec3(0.0f, 1.0f, 0.0f));
     transform = glm::scale(transform, glm::vec3(modelScale, modelScale, modelScale));
     applyView(transform);
+    // printVec(triangles+1);
+
+    // triangles[0].x = openglCoords(mouse_x);
 
     if (shadeTrace) {
         shader.bind();
 
+        // pass the data to the shader
+        glUniform1i( glGetUniformLocation(shader.id(), "numTriangles"),    numTriangles);
+        glUniform4fv(glGetUniformLocation(shader.id(), "triangles"),    numTriangles*3, &(triangles[0].x) );
         glUniform1i( glGetUniformLocation(shader.id(), "numballs"),    numballs);
         glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    numballs, &(ball_pos[0].x) );
         glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), numballs, &(ball_radius[0]));
