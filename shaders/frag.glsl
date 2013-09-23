@@ -67,13 +67,13 @@ ret trace(vec3 eye, vec3 dir) {
             vec3 p = eye - triangles[i].xyz;
             float t = dot(p, normal) / normalDot;
 
-            vec3 intersect = triangles[i].xyz + eye - t * dir; // the intersect point
+            vec3 intersect = eye - t * dir; // the intersect point
 
 
             float len_ab = length(triangles[i+1]);
             float len_ac = length(triangles[i+2]);
-            float v = dot(intersect, triangles[i+2].xyz) / (len_ab * len_ab);
-            float u = dot(intersect, triangles[i+1].xyz) / (len_ac * len_ac);
+            float v = dot(intersect-triangles[i].xyz, triangles[i+1].xyz) / (len_ab * len_ab);
+            float u = dot(intersect-triangles[i].xyz, triangles[i+2].xyz) / (len_ac * len_ac);
             float uv = u + v;
 
             if (
@@ -82,7 +82,7 @@ ret trace(vec3 eye, vec3 dir) {
                 0.0 <= uv && uv <= 1.0
             ) {
                 float offset = dot(dir, intersect-eye);
-                if (offset > 0.0 && (offset < closestOffset || closestType==HIT_TYPE_NO_HIT)) {
+                if (offset > 0.001 && (offset < closestOffset || closestType==HIT_TYPE_NO_HIT)) {
                     closestOffset = offset;
                     closestType = HIT_TYPE_TRIANGLE;
                     closestIntersect = intersect;
@@ -103,7 +103,7 @@ ret trace(vec3 eye, vec3 dir) {
         if (minDist <= radius) {
             vec3 intersect = (pos.xyz+projection) - sqrt((radius*radius)-(minDist*minDist)) * dir;
             float offset = dot(dir, intersect-eye);
-            if (offset > 0.0 && (offset < closestOffset || closestType==HIT_TYPE_NO_HIT)) {
+            if (offset > 0.001 && (offset < closestOffset || closestType==HIT_TYPE_NO_HIT)) {
                 closestOffset = offset;
                 closestType = HIT_TYPE_SPHERE;
                 closestIntersect = intersect;
@@ -136,7 +136,7 @@ ret trace(vec3 eye, vec3 dir) {
         return ret(
             vec4(0.5, 0.0, 0.0, 0.0) * diffuse2(closestNormal),
 
-            vec3(0.0, 0.0, 0.0),
+            closestIntersect,
             reflect(dir, closestNormal),
             true
         );

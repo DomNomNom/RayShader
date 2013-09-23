@@ -14,6 +14,8 @@
 #include "math.h"
 
 
+#define F 10.0 // floor size
+
 Shader shader;
 
 GLuint window;
@@ -45,10 +47,12 @@ bool shadeTrace = true;
 //     0.2,
 // };
 
-int numTriangles = 1;
+int numTriangles = 3;
 glm::vec4 triangles[] = {
-    //  point A,                   B-A,                            C-A
-    glm::vec4(0.0, 0.0, 0.0, 1.0), glm::vec4(0.5, 0.5, 0.0, 0.0), glm::vec4(-0.5, 0.5, 0.0, 0.0),
+    //  point A,                             B-A,                            C-A
+    glm::vec4(0.0, 0.0,  0.0, 1.0), glm::vec4( 0.5, 0.5, 0.0, 0.0), glm::vec4(-0.5, 0.5,  0.0, 0.0),
+    glm::vec4( -F, -.5,   -F, 1.0), glm::vec4( 2*F, 0.0, 0.0, 0.0), glm::vec4( 0.0, 0.0,  2*F, 0.0),
+    glm::vec4(  F, -.5,    F, 1.0), glm::vec4(-2*F, 0.0, 0.0, 0.0), glm::vec4( 0.0, 0.0, -2*F, 0.0),
 };
 
 // balls.
@@ -137,20 +141,31 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    modelScale = mouse_x+0.1f;
     // printf("%f\n", modelScale);
     // ball_pos[0].x = openglCoords(mouse_x);
     // ball_pos[0].y = -openglCoords(mouse_y);
     // printf("%f %f\n", balls[0], balls[1]);
 
-    for (int i=0; i<numballs; ++i)
+    float minY = 0.0f;
+    for (int i=0; i<numballs; ++i) {
         ball_radius[i] = mouse_y;
+        // ball_radius[i] = 0.01;
+        minY = glm::min(minY, ball_pos[i].y - ball_radius[i]);
+    }
+
+    for (int i=1*3; i<3*3; i+=3) {
+        triangles[i].y = minY;
+    }
+    // triangles[8].y = 40 * openglCoords( mouse_y);
+
 
     glm::mat4 transform = glm::mat4(1.0f);
 
-    transform = glm::rotate(transform, mouse_x * 500.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-    // transform = glm::rotate(transform, millis * 0.05f, glm::vec3(0.0f, 1.0f, 0.0f));
+    modelScale = mouse_x+0.1f;
+    modelScale = 0.7f;
+    // transform = glm::rotate(transform, mouse_x * 500.0f, glm::vec3(0.0f, 1.0f, 0.0f));
     transform = glm::scale(transform, glm::vec3(modelScale, modelScale, modelScale));
+    transform = glm::rotate(transform, millis * 0.05f, glm::vec3(0.0f, 1.0f, 0.0f));
     applyView(transform);
     // printVec(triangles+1);
 
