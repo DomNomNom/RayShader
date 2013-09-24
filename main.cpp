@@ -11,6 +11,7 @@
 
 #include "time.h"
 #include "shader.h"
+#include "textures.h"
 #include "math.h"
 
 
@@ -29,28 +30,10 @@ float millis = 0;
 bool shadeTrace = true;
 
 
-// int numballs = 6;
-// glm::vec4 ball_pos[] = {  // positions
-//     glm::vec4(1.0, -.9, 0.0, 1.0),
-//     glm::vec4(0.0, -.0, 0.3, 1.0),
-//     glm::vec4(0.5, 0.5, -.3, 1.0),
-//     glm::vec4(0.3, -.5, -.3, 1.0),
-//     glm::vec4(-.3, -.5, -.3, 1.0),
-//     glm::vec4(-.3, 0.5, -.3, 1.0),
-// };
-// float ball_radius[] = {  // radii
-//     0.3,
-//     0.3,
-//     0.2,
-//     0.2,
-//     0.2,
-//     0.2,
-// };
-
-int numTriangles = 3;
+int numTriangles = 1;
 glm::vec4 triangles[] = {
     //  point A,                             B-A,                            C-A
-    glm::vec4(0.0, 0.0,  0.0, 1.0), glm::vec4( 0.5, 0.5, 0.0, 0.0), glm::vec4(-0.5, 0.5,  0.0, 0.0),
+    glm::vec4(0.0, 0.0,  0.0, 1.0), glm::vec4( 0.5, 0.5, 0.0, 0.0), glm::vec4(-0.25, 0.5,  0.25, 0.0),
     glm::vec4( -F, -.5,   -F, 1.0), glm::vec4( 2*F, 0.0, 0.0, 0.0), glm::vec4( 0.0, 0.0,  2*F, 0.0),
     glm::vec4(  F, -.5,    F, 1.0), glm::vec4(-2*F, 0.0, 0.0, 0.0), glm::vec4( 0.0, 0.0, -2*F, 0.0),
 };
@@ -88,6 +71,8 @@ float ball_radius[] = {  // radii
 };
 float modelScale = 0.7;
 
+GLuint skybox;
+int skybox_wd, skybox_ht;
 
 
 float light_direction[] = {1.0f, 0.0f, 0.0f};
@@ -150,9 +135,10 @@ void display() {
     for (int i=0; i<numballs; ++i) {
         ball_radius[i] = mouse_y;
         // ball_radius[i] = 0.01;
-        minY = glm::min(minY, ball_pos[i].y - ball_radius[i]);
+        minY = glm::min(minY, ball_pos[i].y - ball_radius[i]*2);
     }
 
+    // set the floor to be the lowest possible point
     for (int i=1*3; i<3*3; i+=3) {
         triangles[i].y = minY;
     }
@@ -163,9 +149,9 @@ void display() {
 
     modelScale = mouse_x+0.1f;
     modelScale = 0.7f;
-    // transform = glm::rotate(transform, mouse_x * 500.0f, glm::vec3(0.0f, 1.0f, 0.0f));
     transform = glm::scale(transform, glm::vec3(modelScale, modelScale, modelScale));
-    transform = glm::rotate(transform, millis * 0.05f, glm::vec3(0.0f, 1.0f, 0.0f));
+    transform = glm::rotate(transform, mouse_x * 500.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+    // transform = glm::rotate(transform, millis * 0.05f, glm::vec3(0.0f, 1.0f, 0.0f));
     applyView(transform);
     // printVec(triangles+1);
 
@@ -181,6 +167,11 @@ void display() {
         glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    numballs, &(ball_pos[0].x) );
         glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), numballs, &(ball_radius[0]));
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
+        glUniform1i( glGetUniformLocation(shader.id(), "sky"), 0); //Texture unit 0 is for base images.
+
+        // pass texture samplers
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, skybox);
 
         glColor3f(1,0,0);
         glBegin(GL_TRIANGLES);
@@ -198,17 +189,37 @@ void display() {
     }
     else {
         glEnable(GL_LIGHTING);
-        for (int i=0; i<numballs; ++i) {
-            glPushMatrix();
-                glTranslatef(
-                    ball_pos[i].x,
-                    ball_pos[i].y,
-                    ball_pos[i].z
-                );
-                glutSolidSphere(ball_radius[i], 32, 32);
-            glPopMatrix();
-        }
+
+            for (int i=0; i<numballs; ++i) {
+                glPushMatrix();
+                    glTranslatef(
+                        ball_pos[i].x,
+                        ball_pos[i].y,
+                        ball_pos[i].z
+                    );
+                    glutSolidSphere(ball_radius[i], 32, 32);
+                glPopMatrix();
+            }
+
         glDisable(GL_LIGHTING);
+        glPushAttrib(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_TEXTURE_2D);
+            /* create a square on the XY
+            note that OpenGL origin is at the lower left
+            but texture origin is at upper left
+            => it has to be mirrored
+            (gasman knows why i have to mirror X as well) */
+            glBegin(GL_QUADS);
+                glNormal3f(0.0, 0.0, 1.0);
+                glTexCoord2d(0, 0); glVertex3f(0.0, 0.0, 0.0);
+                glTexCoord2d(0, 1); glVertex3f(0.0, 1.0, 0.0);
+                glTexCoord2d(1, 1); glVertex3f(1.0, 1.0, 0.0);
+                glTexCoord2d(1, 0); glVertex3f(1.0, 0.0, 0.0);
+            glEnd();
+
+
+        glDisable(GL_TEXTURE_2D);
+        glPopAttrib();
     }
 
     undoView();
@@ -279,6 +290,8 @@ int main(int argc, char** argv) {
     glutPassiveMotionFunc(mouseMoveHander);
 
 
+
+    skybox = png_texture_load("sky.png", &skybox_wd, &skybox_ht);
     initShader();
     setupLighting();
     glutMainLoop();

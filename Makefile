@@ -9,8 +9,8 @@ SRC = ./
 
 all: $(BUILD)RayShader
 
-$(BUILD)RayShader: $(BUILD)main.o $(BUILD)time.o $(BUILD)shader.o
-	$(CC) -o $@ $^ -lm -lGL -lglut -lGLU $(LPATH) $(LDPATH)
+$(BUILD)RayShader: $(BUILD)main.o $(BUILD)time.o $(BUILD)shader.o $(BUILD)textures.o
+	$(CC) -o $@ $^ -lm -lGL -lglut -lGLU -lpng $(LPATH) $(LDPATH)
 
 $(BUILD)%.o: $(SRC)%.cpp
 	$(CC) $(CFLAGS) -c -o $@ $^ $(IPATH)

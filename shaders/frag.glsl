@@ -11,7 +11,14 @@ uniform int numballs;
 uniform vec4 triangles[20];
 uniform vec4 ball_pos[20];  // positions
 uniform float ball_radius[20]; // radii
+uniform sampler2D sky;
 
+// ====== local variables ======
+
+// enum hitType
+int HIT_TYPE_NO_HIT   = 0;
+int HIT_TYPE_SPHERE   = 1;
+int HIT_TYPE_TRIANGLE = 2;
 
 // re-tracing information
 struct ret {
@@ -21,13 +28,34 @@ struct ret {
     bool hit;
 };
 
-int HIT_TYPE_NO_HIT   = 0;
-int HIT_TYPE_SPHERE   = 1;
-int HIT_TYPE_TRIANGLE = 2;
+// float root2 = sqrt(2.0);
+float PI = acos(0.0); // 3.14...
+vec2 leftFront = normalize(vec2(1.0, 1.0));
 
+
+// ====== functions ======
+
+
+// vec3 horizontalLeftFront = normalize(vec3(-1.0, 0.0, -1.0)); // the point where the texture coordinates are (0.0,  0.5)
+// vec3 horizontalLeftBack  = normalize(vec3(-1.0, 0.0,  1.0)); // the point where the texture coordinates are (0.25, 0.5)
+vec4 skybox(vec3 dir) {
+    // float crossFromLeftFront = cross(horizontalLeftFront, dir).y; // TODO: this can be optimized
+    // float crossFromLeftBack  = cross(horizontalLeftBack , dir).y;
+    vec2 texPos = vec2(0.0, 0.5+0.5*dir.y); // texPos.x will change
+    if (abs(dir.y) != 1.0) { // if we're going straight up/down, we say that texPos.x=0.0 is good enough
+        vec2 topVec = normalize(dir.xz); // dir viewed from above. (y=z) this helps us decide which face to pick
+
+        // calculate the angle (from http://stackoverflow.com/questions/14066933/direct-way-of-computing-clockwise-angle-between-2-vectors)
+        float det = leftFront.x*topVec.y - leftFront.y*topVec.x;
+        float angle = atan(det, dot(leftFront, topVec));
+        texPos.x = (angle / -2.0*PI)+1.0;
+    }
+    return texture2D(sky, texPos);
+}
 
 // gets called if a ray does not hit any objects
 vec4 specular(vec3 dir) {
+    return skybox(dir);
     return clamp((
         1.0 *
         pow(max(dot(dir, vertex_light_position), 0.5), 50.0) *
@@ -157,7 +185,7 @@ void main() {
     ret r = ret(gl_FragColor, vec3(0.0, 0.0, -2.0), normalize(vec3(v.xy, 2.0)), true);
 
 
-    for (float bounce = 1.0; r.hit && bounce<10.0; bounce+=1.0) {
+    for (float bounce = 1.0; r.hit && bounce<7.0; bounce+=1.0) {
         r = trace(r.eye, r.dir);
 
         vec4 result = r.colour;
@@ -183,6 +211,5 @@ void main() {
     //     if (distance(v.xy, ball.xy) < ball.w)
     //         gl_FragColor = balls[1];
     // }
-
 
 }
