@@ -171,15 +171,16 @@ void loadFace(GLenum face, char *file_name) {
         return;
     }
 
-    glTexImage2D(face, 0, GL_RGB, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, img.image_data);
+    glTexImage2D(face, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.image_data);
     free(img.image_data);
 }
 
-// base name will have things like "_positive_x.png" added to it.
+// base name will have things like "positive_x.png" added to it.
 GLuint png_cubemap_load(const char *base_name) {
 
     GLuint texture;
-    glEnable(GL_TEXTURE_CUBE_MAP);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    // glEnable(GL_TEXTURE_CUBE_MAP);
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
 
@@ -190,12 +191,15 @@ GLuint png_cubemap_load(const char *base_name) {
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     char path[200];
-    loadFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, strcat(strcpy(path, base_name), "_positive_x.png"));
-    loadFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, strcat(strcpy(path, base_name), "_negative_x.png"));
-    loadFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, strcat(strcpy(path, base_name), "_positive_y.png"));
-    loadFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, strcat(strcpy(path, base_name), "_negative_y.png"));
-    loadFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, strcat(strcpy(path, base_name), "_positive_z.png"));
-    loadFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, strcat(strcpy(path, base_name), "_negative_z.png"));
+    loadFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, strcat(strcpy(path, base_name), "positive_x.png"));
+    loadFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, strcat(strcpy(path, base_name), "negative_x.png"));
+    loadFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, strcat(strcpy(path, base_name), "positive_y.png"));
+    loadFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, strcat(strcpy(path, base_name), "negative_y.png"));
+    loadFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, strcat(strcpy(path, base_name), "positive_z.png"));
+    loadFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, strcat(strcpy(path, base_name), "negative_z.png"));
+
+    // glDisable(GL_TEXTURE_CUBE_MAP);
+
 
     return texture;
 }

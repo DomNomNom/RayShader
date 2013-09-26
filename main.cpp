@@ -72,7 +72,7 @@ float ball_radius[] = {  // radii
 float modelScale = 0.7;
 
 GLuint skybox;
-int skybox_wd, skybox_ht;
+// int skybox_wd, skybox_ht;
 
 
 float light_direction[] = {1.0f, 0.0f, 0.0f};
@@ -158,6 +158,12 @@ void display() {
     // triangles[0].x = openglCoords(mouse_x);
 
     if (shadeTrace) {
+
+        // pass texture samplers
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+        // glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
         shader.bind();
 
         // pass the data to the shader
@@ -167,11 +173,8 @@ void display() {
         glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    numballs, &(ball_pos[0].x) );
         glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), numballs, &(ball_radius[0]));
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
-        glUniform1i( glGetUniformLocation(shader.id(), "sky"), 0); //Texture unit 0 is for base images.
+        glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
 
-        // pass texture samplers
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, skybox);
 
         glColor3f(1,0,0);
         glBegin(GL_TRIANGLES);
@@ -202,24 +205,6 @@ void display() {
             }
 
         glDisable(GL_LIGHTING);
-        glPushAttrib(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_TEXTURE_2D);
-            /* create a square on the XY
-            note that OpenGL origin is at the lower left
-            but texture origin is at upper left
-            => it has to be mirrored
-            (gasman knows why i have to mirror X as well) */
-            glBegin(GL_QUADS);
-                glNormal3f(0.0, 0.0, 1.0);
-                glTexCoord2d(0, 0); glVertex3f(0.0, 0.0, 0.0);
-                glTexCoord2d(0, 1); glVertex3f(0.0, 1.0, 0.0);
-                glTexCoord2d(1, 1); glVertex3f(1.0, 1.0, 0.0);
-                glTexCoord2d(1, 0); glVertex3f(1.0, 0.0, 0.0);
-            glEnd();
-
-
-        glDisable(GL_TEXTURE_2D);
-        glPopAttrib();
     }
 
     undoView();
@@ -291,7 +276,8 @@ int main(int argc, char** argv) {
 
 
 
-    skybox = png_texture_load("sky.png", &skybox_wd, &skybox_ht);
+    // skybox = png_texture_load("sky.png", &skybox_wd, &skybox_ht);
+    skybox = png_cubemap_load("resources/beach/");
     initShader();
     setupLighting();
     glutMainLoop();
