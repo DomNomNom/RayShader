@@ -135,10 +135,10 @@ void display() {
     for (int i=0; i<numballs; ++i) {
         ball_radius[i] = mouse_y;
         // ball_radius[i] = 0.01;
-        minY = glm::min(minY, ball_pos[i].y - ball_radius[i]*2);
-    }
 
-    // set the floor to be the lowest possible point
+        // set the floor to be the lowest possible point
+        minY = glm::min(minY, ball_pos[i].y - ball_radius[i]);
+    }
     for (int i=1*3; i<3*3; i+=3) {
         triangles[i].y = minY;
     }
