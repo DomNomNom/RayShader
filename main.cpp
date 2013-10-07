@@ -22,6 +22,7 @@ Shader shader;
 GLuint window;
 int window_wd = 600;
 int window_ht = 600;
+float aspectRatio = window_wd / window_ht;
 
 float mouse_x = 0.5;
 float mouse_y = 0.25;
@@ -30,7 +31,7 @@ float millis = 0;
 bool shadeTrace = true;
 
 
-int numTriangles = 1;
+int numTriangles = 3;
 glm::vec4 triangles[] = {
     //  point A,                             B-A,                            C-A
     glm::vec4(0.0, 0.0,  0.0, 1.0), glm::vec4( 0.5, 0.5, 0.0, 0.0), glm::vec4(-0.25, 0.5,  0.25, 0.0),
@@ -179,17 +180,17 @@ void display() {
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
         glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, &cameraTransform[0][0]);
 
-
+        float r = 10.0;
         glColor3f(1,0,0);
         glBegin(GL_TRIANGLES);
             // two triangles that cover the screen
-            glVertex3f(-1,-1, 0.0);
-            glVertex3f( 1,-1, 0.0);
-            glVertex3f(-1, 1, 0.0);
+            glVertex3f(-r,-r, 0.0);
+            glVertex3f( r,-r, 0.0);
+            glVertex3f(-r, r, 0.0);
 
-            glVertex3f( 1, 1, 0.0);
-            glVertex3f( 1,-1, 0.0);
-            glVertex3f(-1, 1, 0.0);
+            glVertex3f( r, r, 0.0);
+            glVertex3f( r,-r, 0.0);
+            glVertex3f(-r, r, 0.0);
         glEnd();
 
         shader.unbind();
@@ -255,11 +256,33 @@ void keyHander(unsigned char key, int, int) {
     }
     glutPostRedisplay();
 }
+
+
+void reshapeHandler(int wd, int ht) {
+    glViewport(0, 0, ht/aspectRatio, ht);
+    float window_top = (wd/(float)ht) * aspectRatio;
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(
+        20.0,
+        aspectRatio,
+        -1.0, 1.0
+    );
+    glOrtho(
+        -10.0, 10.0,
+        111.0, -111.0,
+        -1.0, 1.0
+    );
+    glMatrixMode(GL_MODELVIEW);
+    printf("omg \n");
+}
+
 void mouseMoveHander(int x, int y){
     mouse_x = x/(float)window_wd;
     mouse_y = y/(float)window_ht;
     glutPostRedisplay();
 }
+
 
 
 int main(int argc, char** argv) {
@@ -272,7 +295,7 @@ int main(int argc, char** argv) {
 
     glutDisplayFunc(display);
     glutIdleFunc(display);
-    // glutReshapeFunc();
+    glutReshapeFunc(reshapeHandler);
     // glutMouseFunc();
     glutKeyboardFunc(keyHander);
     glutMotionFunc(mouseMoveHander);
