@@ -14,6 +14,8 @@
 #include "textures.h"
 #include "math.h"
 
+using namespace glm;
+
 
 #define F 1000.0 // floor size
 
@@ -32,29 +34,29 @@ bool shadeTrace = true;
 
 
 int numTriangles = 3;
-glm::vec4 triangles[] = {
+vec4 triangles[] = {
     //  point A,                             B-A,                            C-A
-    glm::vec4(0.0, 0.0,  0.0, 1.0), glm::vec4( 0.5, 0.5, 0.0, 0.0), glm::vec4(-0.25, 0.5,  0.25, 0.0),
-    glm::vec4( -F, -.5,   -F, 1.0), glm::vec4( 2*F, 0.0, 0.0, 0.0), glm::vec4( 0.0, 0.0,  2*F, 0.0),
-    glm::vec4(  F, -.5,    F, 1.0), glm::vec4(-2*F, 0.0, 0.0, 0.0), glm::vec4( 0.0, 0.0, -2*F, 0.0),
+    vec4(0.0, 0.0,  0.0, 1.0), vec4( 0.5, 0.5, 0.0, 0.0), vec4(-0.25, 0.5,  0.25, 0.0),
+    vec4( -F, -.5,   -F, 1.0), vec4( 2*F, 0.0, 0.0, 0.0), vec4( 0.0, 0.0,  2*F, 0.0),
+    vec4(  F, -.5,    F, 1.0), vec4(-2*F, 0.0, 0.0, 0.0), vec4( 0.0, 0.0, -2*F, 0.0),
 };
 
 // balls.
 // TODO move this to a external file
 int numballs = 12;
-glm::vec4 ball_pos[] = {  // positions
-    glm::vec4(0,                 -0.525731,          0.850651,  1.0),
-    glm::vec4(0.850651,           0,                 0.525731,  1.0),
-    glm::vec4(0.850651,           0,                -0.525731,  1.0),
-    glm::vec4(-0.850651,          0,                -0.525731,  1.0),
-    glm::vec4(-0.850651,          0,                 0.525731,  1.0),
-    glm::vec4(-0.525731,          0.850651,          0       ,  1.0),
-    glm::vec4(0.525731,           0.850651,          0       ,  1.0),
-    glm::vec4(0.525731,          -0.850651,          0       ,  1.0),
-    glm::vec4(-0.525731,         -0.850651,          0       ,  1.0),
-    glm::vec4(0,                 -0.525731,         -0.850651,  1.0),
-    glm::vec4(0,                  0.525731,         -0.850651,  1.0),
-    glm::vec4(0,                  0.525731,          0.850651,  1.0),
+vec4 ball_pos[] = {  // positions
+    vec4(0,                 -0.525731,          0.850651,  1.0),
+    vec4(0.850651,           0,                 0.525731,  1.0),
+    vec4(0.850651,           0,                -0.525731,  1.0),
+    vec4(-0.850651,          0,                -0.525731,  1.0),
+    vec4(-0.850651,          0,                 0.525731,  1.0),
+    vec4(-0.525731,          0.850651,          0       ,  1.0),
+    vec4(0.525731,           0.850651,          0       ,  1.0),
+    vec4(0.525731,          -0.850651,          0       ,  1.0),
+    vec4(-0.525731,         -0.850651,          0       ,  1.0),
+    vec4(0,                 -0.525731,         -0.850651,  1.0),
+    vec4(0,                  0.525731,         -0.850651,  1.0),
+    vec4(0,                  0.525731,          0.850651,  1.0),
 };
 float ball_radius[] = {  // radii
     0.25,
@@ -87,9 +89,9 @@ GLfloat material_specular[] = {8.8, 8.8, 8.8, 1.0};
 GLfloat material_shininess[] = {89};
 
 
-glm::mat4 cameraTransform = glm::mat4(1.0f);
-glm::mat4 view = glm::mat4(1.0f);
-void applyView(glm::mat4 viewMatrix) {
+mat4 cameraTransform = mat4(1.0f);
+mat4 view = mat4(1.0f);
+void applyView(mat4 viewMatrix) {
     view = viewMatrix;
     for (int i=0; i<numballs; ++i) {
         ball_pos[i] = view * ball_pos[i];
@@ -101,10 +103,10 @@ void applyView(glm::mat4 viewMatrix) {
     }
 }
 void undoView() {
-    applyView(glm::inverse(view));
+    applyView(inverse(view));
 }
 
-void printVec(glm::vec4 *v){
+void printVec(vec4 *v){
     printf(
         "[%f %f %f]\n",
         v->x,
@@ -139,7 +141,7 @@ void display() {
         // ball_radius[i] = 0.01;
 
         // set the floor to be the lowest possible point
-        minY = glm::min(minY, ball_pos[i].y - ball_radius[i]);
+        minY = min(minY, ball_pos[i].y - ball_radius[i]);
     }
     for (int i=1*3; i<3*3; i+=3) {
         triangles[i].y = minY;
@@ -147,15 +149,15 @@ void display() {
     // triangles[8].y = 40 * openglCoords( mouse_y);
 
 
-    glm::mat4 transform = glm::mat4(1.0f);
-    cameraTransform = glm::rotate(transform, mouse_x * 500.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+    mat4 transform = mat4(1.0f);
+    cameraTransform = rotate(transform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
 
 
     modelScale = mouse_x+0.1f;
     modelScale = 0.7f;
-    // transform = glm::scale(transform, glm::vec3(modelScale, modelScale, modelScale));
-    // transform = glm::rotate(transform, mouse_x * 500.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-    // transform = glm::rotate(transform, millis * 0.05f, glm::vec3(0.0f, 1.0f, 0.0f));
+    // transform = scale(transform, vec3(modelScale, modelScale, modelScale));
+    // transform = rotate(transform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
+    // transform = rotate(transform, millis * 0.05f, vec3(0.0f, 1.0f, 0.0f));
     applyView(transform);
     // printVec(triangles+1);
 
