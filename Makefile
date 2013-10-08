@@ -1,8 +1,8 @@
 CC = g++
 CFLAGS = -g -Wall -Wextra -pedantic
 IPATH = -I/usr/X11/include -I/usr/pkg/include -I./include
-LPATH = -L/usr/X11/lib -L/usr/pkg/lib
-LDPATH = -Wl,-R/usr/pkg/lib
+LPATH = -L/usr/pkg/lib -L/usr/X11/lib
+#LDPATH = -Wl,-R/usr/pkg/lib
 
 BUILD = ./build/
 SRC = ./
@@ -10,7 +10,7 @@ SRC = ./
 all: $(BUILD)RayShader
 
 $(BUILD)RayShader: $(BUILD)main.o $(BUILD)time.o $(BUILD)shader.o $(BUILD)textures.o
-	$(CC) -o $@ $^ -lm -lGL -lglut -lGLU -lpng $(LPATH) $(LDPATH)
+	$(CC) -o $@ $^ -lm -lGL -lglut -lGLU -lpng16 $(LPATH) $(LDPATH)
 
 $(BUILD)%.o: $(SRC)%.cpp
 	$(CC) $(CFLAGS) -c -o $@ $^ $(IPATH)
