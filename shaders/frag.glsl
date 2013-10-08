@@ -76,11 +76,27 @@ ret trace(vec4 eye, vec4 dir) {
 
             float len_ab = length(triangles[i+1]);
             float len_ac = length(triangles[i+2]);
-            float v = dot(intersect-triangles[i], triangles[i+1]) / (len_ab * len_ab);
-            float u = dot(intersect-triangles[i], triangles[i+2]) / (len_ac * len_ac);
+            float v = dot(intersect-triangles[i], triangles[i+1]) / (len_ab);
+            float u = dot(intersect-triangles[i], triangles[i+2]) / (len_ac);
             float uv = u + v;
 
+
+            vec3 P = vec3(intersect);
+            vec3 v0 = vec3(triangles[i]);
+            vec3 v1 = vec3(triangles[i] + triangles[i+1]);
+            vec3 v2 = vec3(triangles[i] + triangles[i+2]);
+            vec3 edge0 = v1 - v0;
+            vec3 edge1 = v2 - v1;
+            vec3 edge2 = v0 - v2;
+            vec3 C0 = P - v0;
+            vec3 C1 = P - v1;
+            vec3 C2 = P - v2;
+            vec3 N = vec3(normal);
+
             if (
+                // dot(N, cross(edge0, C0)) > 0.0 &&
+                // dot(N, cross(edge1, C1)) > 0.0 &&
+                // dot(N, cross(edge2, C2)) > 0.0
                 0.0 <= u  && u  <= 1.0 &&
                 0.0 <= v  && v  <= 1.0 &&
                 0.0 <= uv && uv <= 1.0

@@ -5,6 +5,7 @@
 #include <GL/glut.h>
 
 #include "glm/glm.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 // #include <glm/gtc/matrix_transform.hpp>
 // #include <glm/gtc/matrix_projection.hpp>
@@ -33,12 +34,24 @@ float millis = 0;
 bool shadeTrace = true;
 
 
-int numTriangles = 3;
+int numTriangles = 9;
 vec4 triangles[] = {
     //  point A,                             B-A,                            C-A
-    vec4(0.0, 0.0,  0.0, 1.0), vec4( 0.5, 0.5, 0.0, 0.0), vec4(-0.25, 0.5,  0.25, 0.0),
-    vec4( -F, -.5,   -F, 1.0), vec4( 2*F, 0.0, 0.0, 0.0), vec4( 0.0, 0.0,  2*F, 0.0),
-    vec4(  F, -.5,    F, 1.0), vec4(-2*F, 0.0, 0.0, 0.0), vec4( 0.0, 0.0, -2*F, 0.0),
+    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+
+    // vec4( 0.0,  0.0,  0.0, 1.0), vec4( 0.5, 0.5,  0.0, 0.0), vec4(-0.25, 0.5,  0.25, 0.0),
+    // vec4(  -F,  -.5,   -F, 1.0), vec4( 2*F, 0.0,  0.0, 0.0), vec4( 0.0,  0.0,  2*F,  0.0),
+    // vec4(   F,  -.5,    F, 1.0), vec4(-2*F, 0.0,  0.0, 0.0), vec4( 0.0,  0.0, -2*F,  0.0),
+
 };
 
 // balls.
@@ -114,6 +127,13 @@ void printVec(vec4 *v){
         v->z
     );
 }
+void myTranslate(vec4 v) {
+    glTranslatef(
+        v.x,
+        v.y,
+        v.z
+    );
+}
 
 
 float extremify(float val) {
@@ -138,7 +158,7 @@ void display() {
     float minY = 0.0f;
     for (int i=0; i<numballs; ++i) {
         ball_radius[i] = mouse_y;
-        // ball_radius[i] = 0.01;
+        ball_radius[i] = 0.01;
 
         // set the floor to be the lowest possible point
         minY = min(minY, ball_pos[i].y - ball_radius[i]);
@@ -151,12 +171,13 @@ void display() {
 
     mat4 transform = mat4(1.0f);
     cameraTransform = rotate(transform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
+    cameraTransform = rotate(transform, 0.0f, vec3(0.0f, 1.0f, 0.0f));
 
 
     modelScale = mouse_x+0.1f;
     modelScale = 0.7f;
     // transform = scale(transform, vec3(modelScale, modelScale, modelScale));
-    // transform = rotate(transform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
+    transform = rotate(transform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
     // transform = rotate(transform, millis * 0.05f, vec3(0.0f, 1.0f, 0.0f));
     applyView(transform);
     // printVec(triangles+1);
@@ -198,20 +219,29 @@ void display() {
         shader.unbind();
     }
     else {
-        glEnable(GL_LIGHTING);
+        // glEnable(GL_LIGHTING);
 
             for (int i=0; i<numballs; ++i) {
                 glPushMatrix();
-                    glTranslatef(
-                        ball_pos[i].x,
-                        ball_pos[i].y,
-                        ball_pos[i].z
-                    );
+                    myTranslate(ball_pos[i]);
+                    // glTranslatef(
+                    //     ball_pos[i].x,
+                    //     ball_pos[i].y,
+                    //     ball_pos[i].z
+                    // );
                     glutSolidSphere(ball_radius[i], 32, 32);
                 glPopMatrix();
             }
 
-        glDisable(GL_LIGHTING);
+            glBegin(GL_TRIANGLES);
+            for (int i=0; i<numTriangles*3; i+=3) {
+                glVertex3fv(value_ptr(vec3(triangles[i]                 )));
+                glVertex3fv(value_ptr(vec3(triangles[i] + triangles[i+1])));
+                glVertex3fv(value_ptr(vec3(triangles[i] + triangles[i+2])));
+            }
+            glEnd();
+
+        // glDisable(GL_LIGHTING);
     }
 
     undoView();
@@ -260,23 +290,8 @@ void keyHander(unsigned char key, int, int) {
 }
 
 
-void reshapeHandler(int wd, int ht) {
+void reshapeHandler(int, int ht) {
     glViewport(0, 0, ht/aspectRatio, ht);
-    float window_top = (wd/(float)ht) * aspectRatio;
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(
-        20.0,
-        aspectRatio,
-        -1.0, 1.0
-    );
-    glOrtho(
-        -10.0, 10.0,
-        111.0, -111.0,
-        -1.0, 1.0
-    );
-    glMatrixMode(GL_MODELVIEW);
-    printf("omg \n");
 }
 
 void mouseMoveHander(int x, int y){
