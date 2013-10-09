@@ -31,8 +31,9 @@ float mouse_x = 0.5;
 float mouse_y = 0.25;
 float millis = 0;
 
-bool shadeTrace = true;
+bool shadeTrace = false;
 
+float PI = acos(0.0) * 2.0;
 
 int numTriangles = 9;
 vec4 triangles[] = {
@@ -158,14 +159,14 @@ void display() {
     float minY = 0.0f;
     for (int i=0; i<numballs; ++i) {
         ball_radius[i] = mouse_y;
-        ball_radius[i] = 0.01;
+        // ball_radius[i] = 0.01;
 
         // set the floor to be the lowest possible point
         minY = min(minY, ball_pos[i].y - ball_radius[i]);
     }
-    for (int i=1*3; i<3*3; i+=3) {
-        triangles[i].y = minY;
-    }
+    // for (int i=1*3; i<3*3; i+=3) {
+    //     triangles[i].y = minY;
+    // }
     // triangles[8].y = 40 * openglCoords( mouse_y);
 
 
@@ -195,9 +196,9 @@ void display() {
 
         // pass the data to the shader
         glUniform1i( glGetUniformLocation(shader.id(), "numTriangles"),    numTriangles);
-        glUniform4fv(glGetUniformLocation(shader.id(), "triangles"),    numTriangles*3, &(triangles[0].x) );
+        glUniform4fv(glGetUniformLocation(shader.id(), "triangles"),    numTriangles*3, value_ptr(triangles[0]) );
         glUniform1i( glGetUniformLocation(shader.id(), "numballs"),    numballs);
-        glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    numballs, &(ball_pos[0].x) );
+        glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    numballs, value_ptr(ball_pos[0]) );
         glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), numballs, &(ball_radius[0]));
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
@@ -218,30 +219,25 @@ void display() {
 
         shader.unbind();
     }
-    else {
-        // glEnable(GL_LIGHTING);
+    else { // openGL render
+        glEnable(GL_LIGHTING);
 
             for (int i=0; i<numballs; ++i) {
                 glPushMatrix();
                     myTranslate(ball_pos[i]);
-                    // glTranslatef(
-                    //     ball_pos[i].x,
-                    //     ball_pos[i].y,
-                    //     ball_pos[i].z
-                    // );
                     glutSolidSphere(ball_radius[i], 32, 32);
                 glPopMatrix();
             }
 
             glBegin(GL_TRIANGLES);
             for (int i=0; i<numTriangles*3; i+=3) {
-                glVertex3fv(value_ptr(vec3(triangles[i]                 )));
-                glVertex3fv(value_ptr(vec3(triangles[i] + triangles[i+1])));
-                glVertex3fv(value_ptr(vec3(triangles[i] + triangles[i+2])));
+                glVertex3fv(value_ptr(triangles[i]                 ));
+                glVertex3fv(value_ptr(triangles[i] + triangles[i+1]));
+                glVertex3fv(value_ptr(triangles[i] + triangles[i+2]));
             }
             glEnd();
 
-        // glDisable(GL_LIGHTING);
+        glDisable(GL_LIGHTING);
     }
 
     undoView();
@@ -318,6 +314,11 @@ int main(int argc, char** argv) {
     glutMotionFunc(mouseMoveHander);
     glutPassiveMotionFunc(mouseMoveHander);
 
+    for (int i=0; i<numTriangles; ++i) {
+        float theta = i/ float(numTriangles);
+        triangles[i*3 +2].y = cos(theta * 2.0*PI);
+        triangles[i*3 +2].z = sin(theta * 2.0*PI);
+    }
 
 
     // skybox = png_texture_load("sky.png", &skybox_wd, &skybox_ht);

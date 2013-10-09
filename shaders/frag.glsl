@@ -6,7 +6,7 @@ uniform vec2 mouse;
 uniform float time;
 uniform int numTriangles;
 uniform int numballs;
-uniform vec4 triangles[20];
+uniform vec4 triangles[40]; // this array must be of size >= numTriangles * 3
 uniform vec4 ball_pos[20];  // positions
 uniform float ball_radius[20]; // radii
 // uniform sampler2D sky;
@@ -94,12 +94,12 @@ ret trace(vec4 eye, vec4 dir) {
             vec3 N = vec3(normal);
 
             if (
-                // dot(N, cross(edge0, C0)) > 0.0 &&
-                // dot(N, cross(edge1, C1)) > 0.0 &&
-                // dot(N, cross(edge2, C2)) > 0.0
-                0.0 <= u  && u  <= 1.0 &&
-                0.0 <= v  && v  <= 1.0 &&
-                0.0 <= uv && uv <= 1.0
+                dot(N, cross(edge0, C0)) > 0.0 &&
+                dot(N, cross(edge1, C1)) > 0.0 &&
+                dot(N, cross(edge2, C2)) > 0.0
+                // 0.0 <= u  && u  <= 1.0 &&
+                // 0.0 <= v  && v  <= 1.0 &&
+                // 0.0 <= uv && uv <= 1.0
             ) {
                 float offset = dot(dir, intersect-eye);
                 if (offset > 0.001 && (offset < closestOffset || closestType==HIT_TYPE_NO_HIT)) {
@@ -145,7 +145,7 @@ ret trace(vec4 eye, vec4 dir) {
     if (closestType == HIT_TYPE_SPHERE) {
         closestNormal = normalize(closestIntersect - ball_pos[closestThing]);
         return ret(
-            vec4(0.5, 0.0, 0.0, 0.0) * diffuse(closestNormal),
+            vec4(0.0, 0.0, 0.0, 0.0) * diffuse(closestNormal),
 
             closestIntersect,
             reflect(dir, closestNormal),
@@ -154,7 +154,7 @@ ret trace(vec4 eye, vec4 dir) {
     }
     else if (closestType == HIT_TYPE_TRIANGLE) {
         return ret(
-            vec4(0.5, 0.0, 0.0, 0.0) * diffuse2(closestNormal),
+            vec4(0.0, 0.0, 0.0, 0.0) * diffuse2(closestNormal),
 
             closestIntersect,
             reflect(dir, closestNormal),
