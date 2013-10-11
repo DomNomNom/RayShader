@@ -31,7 +31,7 @@ float mouse_x = 0.5;
 float mouse_y = 0.25;
 float millis = 0;
 
-bool shadeTrace = false;
+bool shadeTrace = true;
 
 float PI = acos(0.0) * 2.0;
 
@@ -315,9 +315,9 @@ int main(int argc, char** argv) {
     glutPassiveMotionFunc(mouseMoveHander);
 
     for (int i=0; i<numTriangles; ++i) {
-        float theta = i/ float(numTriangles);
-        triangles[i*3 +2].y = cos(theta * 2.0*PI);
-        triangles[i*3 +2].z = sin(theta * 2.0*PI);
+        float theta = i/float(numTriangles) * 2.0*PI;
+        triangles[i*3 +2].y = cos(theta);
+        triangles[i*3 +2].z = sin(theta);
     }
 
 

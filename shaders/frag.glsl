@@ -6,8 +6,8 @@ uniform vec2 mouse;
 uniform float time;
 uniform int numTriangles;
 uniform int numballs;
-uniform vec4 triangles[40]; // this array must be of size >= numTriangles * 3
-uniform vec4 ball_pos[20];  // positions
+uniform vec4 triangles[40];    // this array must be of size >= numTriangles * 3
+uniform vec4 ball_pos[20];     // positions
 uniform float ball_radius[20]; // radii
 // uniform sampler2D sky;
 uniform samplerCube skybox;
@@ -74,12 +74,11 @@ ret trace(vec4 eye, vec4 dir) {
             vec4 intersect = eye - t * dir; // the intersect point
 
 
-            float len_ab = length(triangles[i+1]);
-            float len_ac = length(triangles[i+2]);
-            float v = dot(intersect-triangles[i], triangles[i+1]) / (len_ab);
-            float u = dot(intersect-triangles[i], triangles[i+2]) / (len_ac);
-            float uv = u + v;
-
+            // float len_ab = length(triangles[i+1]);
+            // float len_ac = length(triangles[i+2]);
+            // float v = dot(intersect-triangles[i], normalize(triangles[i+1])) / len_ab; // (len_ab * len_ab);
+            // float u = dot(intersect-triangles[i], normalize(triangles[i+2])) / len_ab; // (len_ac * len_ab);
+            // float uv = u + v;
 
             vec3 P = vec3(intersect);
             vec3 v0 = vec3(triangles[i]);
@@ -161,11 +160,11 @@ ret trace(vec4 eye, vec4 dir) {
             true
         );
     }
-    else {
+    else { // no hit
         return ret(
-            specular(dir),
+            vec4(0.0, 0.0, 0.0, 0.0), //specular(dir),
             vec4(0.0, 0.0, 0.0, 0.0),
-            vec4(0.0, 0.0, 0.0, 0.0),
+            dir,
             false
         );
     }
@@ -188,31 +187,20 @@ void main() {
     );
 
 
-    for (float bounce = 1.0; r.hit && bounce<7.0; bounce+=1.0) {
+    float bounce;
+    for (bounce = 0.0; r.hit && bounce<7.0; bounce+=1.0) {
         r = trace(r.eye, r.dir);
 
-        vec4 result = r.colour;
         if (r.hit) {
-            result += vec4(0.2, 0.0, 0.0, 0.0); // ambient
+            // result += vec4(0.2, 0.0, 0.0, 0.0); // ambient
+            vec4 diffuse = r.colour * pow(0.5, bounce);
             if (! trace(r.eye, vertex_light_position).hit) // shadow
-                result += r.colour; // diffuse
-            result *= pow(0.5, bounce);
+                diffuse *= 0.3;
+            gl_FragColor += diffuse;
         }
-        else { // specular (this will be the last loop iteration)
-            result += r.colour;
-            result *= pow(0.75, bounce); // it looks better if specular light bounces more
-        }
-        // result = clamp(result, 0.0, 1.0);
-
-        gl_FragColor += result;// * pow(0.75, bounce);
 
     }
 
-    // gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);
-    // for (int i=0; i<numballs; ++i) {
-    //     vec4 ball = balls[i];
-    //     if (distance(v.xy, ball.xy) < ball.w)
-    //         gl_FragColor = balls[1];
-    // }
+    gl_FragColor += specular(r.dir) * pow(0.85, bounce);
 
 }
