@@ -29,7 +29,7 @@ float aspectRatio = window_wd / window_ht;
 
 float mouse_x = 0.5;
 float mouse_y = 0.25;
-float millis = 0;
+float seconds = 0;
 
 bool shadeTrace = true;
 
@@ -145,8 +145,8 @@ float openglCoords(float val) {
 }
 
 void display() {
-    millis += time_dt() * 1000;
-    // printf("time %f\n", millis);
+    seconds += time_dt();
+    // printf("time %f\n", seconds);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
@@ -179,7 +179,7 @@ void display() {
     modelScale = 0.7f;
     // transform = scale(transform, vec3(modelScale, modelScale, modelScale));
     transform = rotate(transform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
-    // transform = rotate(transform, millis * 0.05f, vec3(0.0f, 1.0f, 0.0f));
+    // transform = rotate(transform, seconds * 50.0f, vec3(0.0f, 1.0f, 0.0f));
     applyView(transform);
     // printVec(triangles+1);
 
@@ -203,6 +203,7 @@ void display() {
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
         glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, &cameraTransform[0][0]);
+        glUniform1f( glGetUniformLocation(shader.id(), "time"), seconds); //Texture unit 0
 
         float r = 10.0;
         glColor3f(1,0,0);

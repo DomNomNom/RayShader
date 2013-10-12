@@ -30,11 +30,24 @@ struct ret {
 };
 
 // float root2 = sqrt(2.0);
-float PI = acos(0.0); // 3.14...
+float PI = acos(0.0)*2.0; // 3.14...
 vec2 leftFront = normalize(vec2(1.0, 1.0));
 
 
 // ====== functions ======
+
+
+
+vec2 randomV = v.xy * sin(time);
+float rand() {
+    float random = fract(sin(dot(randomV.xy, vec2(12.9898, 78.233)))* 43758.5453);
+    randomV = vec2(random, randomV.y);
+    return random;
+}
+
+vec3 rand3D() {
+    return vec3(rand(), rand(), rand());
+}
 
 // gets called if a ray does not hit any objects
 vec4 specular(vec4 dir) {
@@ -144,7 +157,7 @@ ret trace(vec4 eye, vec4 dir) {
     if (closestType == HIT_TYPE_SPHERE) {
         closestNormal = normalize(closestIntersect - ball_pos[closestThing]);
         return ret(
-            vec4(0.0, 0.0, 0.0, 0.0) * diffuse(closestNormal),
+            vec4(1.0, 0.0, 0.0, 0.0) * diffuse(closestNormal),
 
             closestIntersect,
             reflect(dir, closestNormal),
@@ -153,7 +166,7 @@ ret trace(vec4 eye, vec4 dir) {
     }
     else if (closestType == HIT_TYPE_TRIANGLE) {
         return ret(
-            vec4(0.0, 0.0, 0.0, 0.0) * diffuse2(closestNormal),
+            vec4(1.0, 0.0, 0.0, 0.0) * diffuse2(closestNormal),
 
             closestIntersect,
             reflect(dir, closestNormal),
@@ -193,14 +206,14 @@ void main() {
 
         if (r.hit) {
             // result += vec4(0.2, 0.0, 0.0, 0.0); // ambient
-            vec4 diffuse = r.colour * pow(0.5, bounce);
-            if (! trace(r.eye, vertex_light_position).hit) // shadow
-                diffuse *= 0.3;
+            vec4 diffuse = r.colour * pow(0.5, bounce+1.0);
+            if (trace(r.eye + vec4(rand3D(), 0.0), vertex_light_position).hit) // shadow
+                diffuse *= 0.7;
             gl_FragColor += diffuse;
         }
 
     }
 
-    gl_FragColor += specular(r.dir) * pow(0.85, bounce);
 
+    gl_FragColor += specular(r.dir) * pow(0.85, bounce);
 }
