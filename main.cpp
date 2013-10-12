@@ -35,25 +35,49 @@ bool shadeTrace = true;
 
 float PI = acos(0.0) * 2.0;
 
-int numTriangles = 9;
-vec4 triangles[] = {
-    //  point A,                             B-A,                            C-A
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-
-    // vec4( 0.0,  0.0,  0.0, 1.0), vec4( 0.5, 0.5,  0.0, 0.0), vec4(-0.25, 0.5,  0.25, 0.0),
-    // vec4(  -F,  -.5,   -F, 1.0), vec4( 2*F, 0.0,  0.0, 0.0), vec4( 0.0,  0.0,  2*F,  0.0),
-    // vec4(   F,  -.5,    F, 1.0), vec4(-2*F, 0.0,  0.0, 0.0), vec4( 0.0,  0.0, -2*F,  0.0),
-
+vec4 vertecies[] = {
+    vec4( 1.0,  0.0,  0.0,          1.0),
+    vec4(-1.0,  0.0,  0.0,          1.0),
+    vec4(0.0,  1.000000,  0.000000, 1.0),
+    vec4(0.0,  0.766044,  0.642788, 1.0),
+    vec4(0.0,  0.173648,  0.984808, 1.0),
+    vec4(0.0, -0.500000,  0.866025, 1.0),
+    vec4(0.0, -0.939693,  0.342020, 1.0),
+    vec4(0.0, -0.939693, -0.342020, 1.0),
+    vec4(0.0, -0.500000, -0.866025, 1.0),
+    vec4(0.0,  0.173649, -0.984808, 1.0),
+    vec4(0.0,  0.766045, -0.642787, 1.0),
 };
+int triangles[] = { // indecies for vertecies[]
+    0, 1, 2,
+    0, 1, 3,
+    0, 1, 4,
+    0, 1, 5,
+    0, 1, 6,
+    0, 1, 7,
+    0, 1, 8,
+    0, 1, 9,
+    0, 1, 10,
+};
+int numVertecies  = (sizeof(vertecies) / sizeof(vec4));
+int numTriangles = (sizeof(triangles) / sizeof(int )) / 3;
+
+// vec4 triangles[] = {
+//     //  point A,                             B,                            C
+//     vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+//     vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+//     vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+//     vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+//     vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+//     vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+//     vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+//     vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+//     vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+//     vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
+//     // vec4( 0.0,  0.0,  0.0, 1.0), vec4( 0.5, 0.5,  0.0, 0.0), vec4(-0.25, 0.5,  0.25, 0.0),
+//     // vec4(  -F,  -.5,   -F, 1.0), vec4( 2*F, 0.0,  0.0, 0.0), vec4( 0.0,  0.0,  2*F,  0.0),
+//     // vec4(   F,  -.5,    F, 1.0), vec4(-2*F, 0.0,  0.0, 0.0), vec4( 0.0,  0.0, -2*F,  0.0),
+// };
 
 // balls.
 // TODO move this to a external file
@@ -110,10 +134,8 @@ void applyView(mat4 viewMatrix) {
     for (int i=0; i<numballs; ++i) {
         ball_pos[i] = view * ball_pos[i];
     }
-    for (int i=0; i<numTriangles*3; i+=3) {
-        triangles[i  ] = view * triangles[i  ];
-        triangles[i+1] = view * triangles[i+1];
-        triangles[i+2] = view * triangles[i+2];
+    for (int i=0; i<numVertecies; ++i) {
+        vertecies[i] = view * vertecies[i];
     }
 }
 void undoView() {
@@ -196,7 +218,9 @@ void display() {
 
         // pass the data to the shader
         glUniform1i( glGetUniformLocation(shader.id(), "numTriangles"),    numTriangles);
-        glUniform4fv(glGetUniformLocation(shader.id(), "triangles"),    numTriangles*3, value_ptr(triangles[0]) );
+        // glUniform4fv(glGetUniformLocation(shader.id(), "triangles"),    numTriangles*3, value_ptr(triangles[0]) );
+        glUniform4fv(glGetUniformLocation(shader.id(), "vertecies"),    numVertecies, value_ptr(vertecies[0]) );
+        glUniform1iv(glGetUniformLocation(shader.id(), "triangles"),    numTriangles*3, triangles);
         glUniform1i( glGetUniformLocation(shader.id(), "numballs"),    numballs);
         glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    numballs, value_ptr(ball_pos[0]) );
         glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), numballs, &(ball_radius[0]));
@@ -232,9 +256,9 @@ void display() {
 
             glBegin(GL_TRIANGLES);
             for (int i=0; i<numTriangles*3; i+=3) {
-                glVertex3fv(value_ptr(triangles[i]                 ));
-                glVertex3fv(value_ptr(triangles[i] + triangles[i+1]));
-                glVertex3fv(value_ptr(triangles[i] + triangles[i+2]));
+                glVertex3fv(value_ptr(vertecies[triangles[i]]));
+                glVertex3fv(value_ptr(vertecies[triangles[i+1]]));
+                glVertex3fv(value_ptr(vertecies[triangles[i+2]]));
             }
             glEnd();
 
@@ -315,11 +339,13 @@ int main(int argc, char** argv) {
     glutMotionFunc(mouseMoveHander);
     glutPassiveMotionFunc(mouseMoveHander);
 
-    for (int i=0; i<numTriangles; ++i) {
-        float theta = i/float(numTriangles) * 2.0*PI;
-        triangles[i*3 +2].y = cos(theta);
-        triangles[i*3 +2].z = sin(theta);
-    }
+    // // initialize triangles
+    // for (int i=0; i<numTriangles; ++i) {
+    //     float theta = i/float(numTriangles) * 2.0*PI;
+    //     triangles[i*3 +2].y = cos(theta);
+    //     triangles[i*3 +2].z = sin(theta);
+    // printf("A: %f %f\n", triangles[i*3 +2].y, triangles[i*3 +2].z);
+    // }
 
 
     // skybox = png_texture_load("sky.png", &skybox_wd, &skybox_ht);

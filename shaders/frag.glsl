@@ -6,7 +6,9 @@ uniform vec2 mouse;
 uniform float time;
 uniform int numTriangles;
 uniform int numballs;
-uniform vec4 triangles[40];    // this array must be of size >= numTriangles * 3
+uniform vec4 vertecies[40];
+uniform int triangles[40];
+// uniform vec4 triangles[40];    // this array must be of size >= numTriangles * 3
 uniform vec4 ball_pos[20];     // positions
 uniform float ball_radius[20]; // radii
 // uniform sampler2D sky;
@@ -75,13 +77,16 @@ ret trace(vec4 eye, vec4 dir) {
 
 
     for (int i=0; i<numTriangles*3; i+=3) {
-        vec4 normal = vec4(normalize(cross(triangles[i+1].xyz, triangles[i+2].xyz)), 0.0);
+        vec3 v0 = vec3(vertecies[triangles[i  ]]);
+        vec3 v1 = vec3(vertecies[triangles[i+1]]);
+        vec3 v2 = vec3(vertecies[triangles[i+2]]);
+        vec4 normal = vec4(normalize(cross(v1-v0, v2-v0)), 0.0);
 
         float normalDot = dot(dir, normal);
         if (normalDot != 0.0) {
             // calculate be bestTriangleOffset
             // vec4 u =
-            vec4 p = eye - triangles[i];
+            vec4 p = eye - vertecies[triangles[i]];
             float t = dot(p, normal) / normalDot;
 
             vec4 intersect = eye - t * dir; // the intersect point
@@ -93,10 +98,8 @@ ret trace(vec4 eye, vec4 dir) {
             // float u = dot(intersect-triangles[i], normalize(triangles[i+2])) / len_ab; // (len_ac * len_ab);
             // float uv = u + v;
 
+            // baycentric coordinate method
             vec3 P = vec3(intersect);
-            vec3 v0 = vec3(triangles[i]);
-            vec3 v1 = vec3(triangles[i] + triangles[i+1]);
-            vec3 v2 = vec3(triangles[i] + triangles[i+2]);
             vec3 edge0 = v1 - v0;
             vec3 edge1 = v2 - v1;
             vec3 edge2 = v0 - v2;
@@ -104,6 +107,7 @@ ret trace(vec4 eye, vec4 dir) {
             vec3 C1 = P - v1;
             vec3 C2 = P - v2;
             vec3 N = vec3(normal);
+
 
             if (
                 dot(N, cross(edge0, C0)) > 0.0 &&
@@ -120,6 +124,8 @@ ret trace(vec4 eye, vec4 dir) {
                     closestIntersect = intersect;
                     closestNormal = normal;
                     closestThing = i;
+                }
+                else { // no hit
                 }
             }
         }
@@ -191,9 +197,8 @@ ret trace(vec4 eye, vec4 dir) {
 
 void main() {
     gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-
     ret r = ret(
-        gl_FragColor,
+        vec4(0.0),
         cameraTransform * vec4(0.0, 0.0, -3.0, 1.0),
         cameraTransform * normalize(vec4(v.xy, 2.0, 0.0)),
         true
@@ -201,13 +206,13 @@ void main() {
 
 
     float bounce;
-    for (bounce = 0.0; r.hit && bounce<7.0; bounce+=1.0) {
+    for (bounce=0.0; r.hit && bounce<7.0; bounce+=1.0) {
         r = trace(r.eye, r.dir);
 
         if (r.hit) {
             // result += vec4(0.2, 0.0, 0.0, 0.0); // ambient
-            vec4 diffuse = r.colour * pow(0.5, bounce+1.0);
-            if (trace(r.eye + vec4(rand3D(), 0.0), vertex_light_position).hit) // shadow
+            vec4 diffuse = r.colour * pow(0.0, bounce+1.0);
+            if (trace(r.eye, vertex_light_position).hit) // shadow
                 diffuse *= 0.7;
             gl_FragColor += diffuse;
         }
@@ -216,4 +221,8 @@ void main() {
 
 
     gl_FragColor += specular(r.dir) * pow(0.85, bounce);
+
+    // gl_FragColor *= 1.5;
+    // gl_FragColor *= 0.5;
+
 }
