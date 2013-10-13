@@ -5,7 +5,7 @@ varying vec4 v;
 uniform vec2 mouse;
 uniform float time;
 uniform int numTriangles;
-uniform int numballs;
+uniform int numBalls;
 uniform vec4 vertecies[40];
 uniform int triangles[40];
 // uniform vec4 triangles[40];    // this array must be of size >= numTriangles * 3
@@ -132,7 +132,7 @@ ret trace(vec4 eye, vec4 dir) {
     }
 
     // find the best ball
-    for (int i=0; i<numballs; ++i) {
+    for (int i=0; i<numBalls; ++i) {
         vec4 pos = ball_pos[i];
         float radius = ball_radius[i];
 
