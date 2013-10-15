@@ -48,11 +48,13 @@ std::vector<int> triangles;
 std::vector<vec4> ball_pos;
 std::vector<float> ball_radius;
 GLuint skybox;
+bool skybox_enabled = false;
 
 
 
 // modified by water simulation
-std::vector<vec2> water;
+std::vector<vec3> water;
+std::vector<vec3> water_normals;
 int trbulentuMin, trbulentuMax;
 
 
@@ -135,8 +137,8 @@ void display() {
 
     // how the camera is transformed
     cameraTransform = mat4(1.0f);
-    cameraTransform = rotate(cameraTransform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
-    cameraTransform = rotate(cameraTransform, mouse_y * 180.0f-90.0f, vec3(1.0f, 0.0f, 0.0f));
+    cameraTransform = rotate(cameraTransform, mouse_x * 2.0f *-360.0f, vec3(0.0f, 1.0f, 0.0f));
+    cameraTransform = rotate(cameraTransform, mouse_y * -180.0f+90.0f, vec3(1.0f, 0.0f, 0.0f));
     cameraTransform = translate(cameraTransform, vec3(0.0, 0.0, -2.0));
 
 
@@ -168,8 +170,11 @@ void display() {
         glUniform1i( glGetUniformLocation(shader.id(), "numBalls"),    ball_pos.size());
         glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    ball_pos.size(), value_ptr(ball_pos[0]) );
         glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), ball_pos.size(), &ball_radius[0]);
+        glUniform3fv(glGetUniformLocation(shader.id(), "water"        ), water.size(), value_ptr(water        [0]));
+        glUniform3fv(glGetUniformLocation(shader.id(), "water_normals"), water.size(), value_ptr(water_normals[0]));
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
+        glUniform1i( glGetUniformLocation(shader.id(), "skybox_enabled"), skybox_enabled); //Texture unit 0
         glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, value_ptr(cameraTransform));
         glUniform1f( glGetUniformLocation(shader.id(), "time"), seconds); //Texture unit 0
 
@@ -256,12 +261,11 @@ void keyHander(unsigned char key, int, int) {
         case 13:  // Enter -> refresh shader
             initShader();
             break;
-        case 's':
-            shadeTrace = !shadeTrace;
-            break;
-        case '1': currentScene = SCENE_BEACH;      reloadScene(); break;
-        case '2': currentScene = SCENE_SURFACE;    reloadScene(); break;
-        case '3': currentScene = SCENE_WATER;      reloadScene(); break;
+        case '1': currentScene = SCENE_BEACH;      reloadScene();   break;
+        case '2': currentScene = SCENE_SURFACE;    reloadScene();   break;
+        case '3': currentScene = SCENE_WATER;      reloadScene();   break;
+        case 's': shadeTrace = !shadeTrace;                         break;
+        case 'l': skybox_enabled = !skybox_enabled;                 break;
     }
     glutPostRedisplay();
 }

@@ -8,11 +8,10 @@ uniform int numTriangles;
 uniform int numBalls;
 uniform vec4 vertecies[40];
 uniform int triangles[40];
-// uniform vec4 triangles[40];    // this array must be of size >= numTriangles * 3
 uniform vec4 ball_pos[20];     // positions
 uniform float ball_radius[20]; // radii
-// uniform sampler2D sky;
 uniform samplerCube skybox;
+uniform bool skybox_enabled;
 uniform mat4 cameraTransform;
 
 
@@ -47,13 +46,14 @@ float rand() {
     return random;
 }
 
-vec3 rand3D() {
-    return vec3(rand(), rand(), rand());
+vec4 rand3D() {
+    return vec4(rand(), rand(), rand(), 0.0);
 }
 
 // gets called if a ray does not hit any objects
 vec4 specular(vec4 dir) {
-    return textureCube(skybox, dir.xyz);
+    if (skybox_enabled)
+        return textureCube(skybox, dir.xyz);
 
     return clamp((
         1.0 *
@@ -210,13 +210,14 @@ void main() {
         r = trace(r.eye, r.dir);
 
         if (r.hit) {
-            // result += vec4(0.2, 0.0, 0.0, 0.0); // ambient
-            vec4 diffuse = r.colour * pow(0.0, bounce+1.0);
-            ret shadow_ret = trace(r.eye, vertex_light_position+ vec4(rand3D() * 0.05, 0.0));
-            if (shadow_ret.hit) { // shadow
-                shadow *= 0.75;
+            if (trace(r.eye, vertex_light_position + 0.05*rand3D()).hit) { // shadow
+                shadow = 0.75;
             }
-            gl_FragColor += diffuse;
+            if (!skybox_enabled) {
+                vec4 diffuse = r.colour; // diffuse
+                diffuse += vec4(0.0, 0.3, 0.0, 0.0); // ambient
+                gl_FragColor += diffuse * pow(0.4, bounce+1.0);
+            } // diffuse
         }
 
     }
