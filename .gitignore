@@ -2,7 +2,6 @@
 glm/*
 
 # build folder
-build/*
 
 # Compiled Object files
 *.slo
