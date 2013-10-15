@@ -6,6 +6,17 @@
 #include <GL/glut.h>
 #include <png.h>
 
+//support for libpng version > 14
+#ifndef png_infopp_NULL
+# define png_infopp_NULL (png_infopp)NULL
+#endif
+#ifndef png_voidp_NULL
+# define png_voidp_NULL (png_voidp)NULL
+#endif
+#ifndef int_p_NULL
+# define int_p_NULL (int*)NULL
+#endif
+
 struct imgInfo {
     int width;
     int height;
