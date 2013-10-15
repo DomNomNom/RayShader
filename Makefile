@@ -9,7 +9,7 @@ SRC = ./
 
 all: $(BUILD)RayShader
 
-$(BUILD)RayShader: $(BUILD)main.o $(BUILD)time.o $(BUILD)shader.o $(BUILD)textures.o
+$(BUILD)RayShader: $(BUILD)main.o $(BUILD)time.o $(BUILD)shader.o $(BUILD)textures.o $(BUILD)scene.o
 	$(CC) -o $@ $^ -lm -lGL -lglut -lGLU -lpng16 $(LPATH) $(LDPATH)
 
 $(BUILD)%.o: $(SRC)%.cpp

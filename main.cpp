@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <GL/glut.h>
+#include <vector>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -13,7 +14,8 @@
 #include "time.h"
 #include "shader.h"
 #include "textures.h"
-#include "math.h"
+#include "scene.h"
+
 
 using namespace glm;
 
@@ -29,66 +31,22 @@ float aspectRatio = window_wd / window_ht;
 
 float mouse_x = 0.5;
 float mouse_y = 0.25;
-float millis = 0;
+float seconds = 0;
 
 bool shadeTrace = true;
 
-
-int numTriangles = 9;
-vec4 triangles[] = {
-    //  point A,                             B-A,                            C-A
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-    vec4( 1.0,  0.0,  0.0, 1.0), vec4(-2.0, 0.0, 0.0, 0.0),  vec4( -1.0,  1.0,  0.0,  0.0),
-
-    // vec4( 0.0,  0.0,  0.0, 1.0), vec4( 0.5, 0.5,  0.0, 0.0), vec4(-0.25, 0.5,  0.25, 0.0),
-    // vec4(  -F,  -.5,   -F, 1.0), vec4( 2*F, 0.0,  0.0, 0.0), vec4( 0.0,  0.0,  2*F,  0.0),
-    // vec4(   F,  -.5,    F, 1.0), vec4(-2*F, 0.0,  0.0, 0.0), vec4( 0.0,  0.0, -2*F,  0.0),
-
-};
-
-// balls.
-// TODO move this to a external file
-int numballs = 12;
-vec4 ball_pos[] = {  // positions
-    vec4(0,                 -0.525731,          0.850651,  1.0),
-    vec4(0.850651,           0,                 0.525731,  1.0),
-    vec4(0.850651,           0,                -0.525731,  1.0),
-    vec4(-0.850651,          0,                -0.525731,  1.0),
-    vec4(-0.850651,          0,                 0.525731,  1.0),
-    vec4(-0.525731,          0.850651,          0       ,  1.0),
-    vec4(0.525731,           0.850651,          0       ,  1.0),
-    vec4(0.525731,          -0.850651,          0       ,  1.0),
-    vec4(-0.525731,         -0.850651,          0       ,  1.0),
-    vec4(0,                 -0.525731,         -0.850651,  1.0),
-    vec4(0,                  0.525731,         -0.850651,  1.0),
-    vec4(0,                  0.525731,          0.850651,  1.0),
-};
-float ball_radius[] = {  // radii
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-};
+float PI = acos(0.0) * 2.0;
 
 float modelScale = 0.7;
 
 GLuint skybox;
+
+std::vector<vec4> vertecies;
+std::vector<int> triangles;
+std::vector<vec4> ball_pos;
+std::vector<float> ball_radius;
+
+
 
 
 float light_direction[] = {1.0f, 0.0f, 0.0f};
@@ -106,13 +64,11 @@ mat4 cameraTransform = mat4(1.0f);
 mat4 view = mat4(1.0f);
 void applyView(mat4 viewMatrix) {
     view = viewMatrix;
-    for (int i=0; i<numballs; ++i) {
+    for (unsigned int i=0; i<ball_pos.size(); ++i) {
         ball_pos[i] = view * ball_pos[i];
     }
-    for (int i=0; i<numTriangles*3; i+=3) {
-        triangles[i  ] = view * triangles[i  ];
-        triangles[i+1] = view * triangles[i+1];
-        triangles[i+2] = view * triangles[i+2];
+    for (unsigned int i=0; i<vertecies.size(); ++i) {
+        vertecies[i] = view * vertecies[i];
     }
 }
 void undoView() {
@@ -144,8 +100,8 @@ float openglCoords(float val) {
 }
 
 void display() {
-    millis += time_dt() * 1000;
-    // printf("time %f\n", millis);
+    seconds += time_dt();
+    // printf("time %f\n", seconds);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
@@ -156,16 +112,16 @@ void display() {
     // printf("%f %f\n", balls[0], balls[1]);
 
     float minY = 0.0f;
-    for (int i=0; i<numballs; ++i) {
+    for (unsigned int i=0; i<ball_radius.size(); ++i) {
         ball_radius[i] = mouse_y;
-        ball_radius[i] = 0.01;
+        // ball_radius[i] = 0.01;
 
         // set the floor to be the lowest possible point
         minY = min(minY, ball_pos[i].y - ball_radius[i]);
     }
-    for (int i=1*3; i<3*3; i+=3) {
-        triangles[i].y = minY;
-    }
+    // for (int i=1*3; i<3*3; i+=3) {
+    //     triangles[i].y = minY;
+    // }
     // triangles[8].y = 40 * openglCoords( mouse_y);
 
 
@@ -178,7 +134,7 @@ void display() {
     modelScale = 0.7f;
     // transform = scale(transform, vec3(modelScale, modelScale, modelScale));
     transform = rotate(transform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
-    // transform = rotate(transform, millis * 0.05f, vec3(0.0f, 1.0f, 0.0f));
+    // transform = rotate(transform, seconds * 50.0f, vec3(0.0f, 1.0f, 0.0f));
     applyView(transform);
     // printVec(triangles+1);
 
@@ -194,14 +150,17 @@ void display() {
         shader.bind();
 
         // pass the data to the shader
-        glUniform1i( glGetUniformLocation(shader.id(), "numTriangles"),    numTriangles);
-        glUniform4fv(glGetUniformLocation(shader.id(), "triangles"),    numTriangles*3, &(triangles[0].x) );
-        glUniform1i( glGetUniformLocation(shader.id(), "numballs"),    numballs);
-        glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    numballs, &(ball_pos[0].x) );
-        glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), numballs, &(ball_radius[0]));
+        // glUniform4fv(glGetUniformLocation(shader.id(), "triangles"),    numTriangles*3, value_ptr(triangles[0]) );
+        glUniform4fv(glGetUniformLocation(shader.id(), "vertecies"),    vertecies.size(), value_ptr(vertecies[0]) );
+        glUniform1iv(glGetUniformLocation(shader.id(), "triangles"),    triangles.size(), &triangles[0] );
+        glUniform1i( glGetUniformLocation(shader.id(), "numTriangles"), triangles.size()/3);
+        glUniform1i( glGetUniformLocation(shader.id(), "numBalls"),    ball_pos.size());
+        glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    ball_pos.size(), value_ptr(ball_pos[0]) );
+        glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), ball_pos.size(), &ball_radius[0]);
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
         glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, &cameraTransform[0][0]);
+        glUniform1f( glGetUniformLocation(shader.id(), "time"), seconds); //Texture unit 0
 
         float r = 10.0;
         glColor3f(1,0,0);
@@ -218,30 +177,25 @@ void display() {
 
         shader.unbind();
     }
-    else {
-        // glEnable(GL_LIGHTING);
+    else { // openGL render
+        glEnable(GL_LIGHTING);
 
-            for (int i=0; i<numballs; ++i) {
+            for (unsigned int i=0; i<ball_pos.size(); ++i) {
                 glPushMatrix();
                     myTranslate(ball_pos[i]);
-                    // glTranslatef(
-                    //     ball_pos[i].x,
-                    //     ball_pos[i].y,
-                    //     ball_pos[i].z
-                    // );
                     glutSolidSphere(ball_radius[i], 32, 32);
                 glPopMatrix();
             }
 
             glBegin(GL_TRIANGLES);
-            for (int i=0; i<numTriangles*3; i+=3) {
-                glVertex3fv(value_ptr(vec3(triangles[i]                 )));
-                glVertex3fv(value_ptr(vec3(triangles[i] + triangles[i+1])));
-                glVertex3fv(value_ptr(vec3(triangles[i] + triangles[i+2])));
+            for (unsigned int i=0; i<triangles.size(); i+=3) {
+                glVertex3fv(value_ptr(vertecies[triangles[i  ]]));
+                glVertex3fv(value_ptr(vertecies[triangles[i+1]]));
+                glVertex3fv(value_ptr(vertecies[triangles[i+2]]));
             }
             glEnd();
 
-        // glDisable(GL_LIGHTING);
+        glDisable(GL_LIGHTING);
     }
 
     undoView();
@@ -318,7 +272,22 @@ int main(int argc, char** argv) {
     glutMotionFunc(mouseMoveHander);
     glutPassiveMotionFunc(mouseMoveHander);
 
+    // // initialize triangles
+    // for (int i=0; i<numTriangles; ++i) {
+    //     float theta = i/float(numTriangles) * 2.0*PI;
+    //     triangles[i*3 +2].y = cos(theta);
+    //     triangles[i*3 +2].z = sin(theta);
+    // printf("A: %f %f\n", triangles[i*3 +2].y, triangles[i*3 +2].z);
+    // }
 
+    loadScene(
+        "resources/beach.scene",
+        // "resources/surface.scene",
+        vertecies,
+        triangles,
+        ball_pos,
+        ball_radius
+    );
 
     // skybox = png_texture_load("sky.png", &skybox_wd, &skybox_ht);
     skybox = png_cubemap_load("resources/beach/");
