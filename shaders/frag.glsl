@@ -212,8 +212,8 @@ void main() {
         if (r.hit) {
             // result += vec4(0.2, 0.0, 0.0, 0.0); // ambient
             vec4 diffuse = r.colour * pow(0.0, bounce+1.0);
-            if (trace(r.eye, vertex_light_position).hit) { // shadow
-                // diffuse *= 0.7;
+            ret shadow_ret = trace(r.eye, vertex_light_position+ vec4(rand3D() * 0.05, 0.0));
+            if (shadow_ret.hit) { // shadow
                 shadow *= 0.75;
             }
             gl_FragColor += diffuse;
