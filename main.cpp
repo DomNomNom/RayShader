@@ -39,12 +39,20 @@ float PI = acos(0.0) * 2.0;
 
 float modelScale = 0.7;
 
-GLuint skybox;
 
+// globals
+std::vector<vec2> water;
+int trbulentuMin, trbulentuMax;
+
+
+scene currentScene = SCENE_BEACH;
 std::vector<vec4> vertecies;
 std::vector<int> triangles;
 std::vector<vec4> ball_pos;
 std::vector<float> ball_radius;
+GLuint skybox;
+
+
 
 
 
@@ -226,6 +234,16 @@ void initShader() {
     );
 }
 
+void reloadScene() {
+    loadScene(
+        currentScene,
+        vertecies,
+        triangles,
+        ball_pos,
+        ball_radius
+    );
+}
+
 void keyHander(unsigned char key, int, int) {
     switch (key) {
         case 27: // Escape -> exit
@@ -238,7 +256,8 @@ void keyHander(unsigned char key, int, int) {
         case 's':
             shadeTrace = !shadeTrace;
             break;
-
+        case '1': currentScene = SCENE_BEACH;      reloadScene(); break;
+        case '2': currentScene = SCENE_SURFACE;    reloadScene(); break;
     }
     glutPostRedisplay();
 }
@@ -254,8 +273,6 @@ void mouseMoveHander(int x, int y){
     glutPostRedisplay();
 }
 
-
-
 int main(int argc, char** argv) {
     time_init();
 
@@ -265,7 +282,7 @@ int main(int argc, char** argv) {
     window = glutCreateWindow("RayShader");
 
     glutDisplayFunc(display);
-    glutIdleFunc(display);
+    // glutIdleFunc(display);
     glutReshapeFunc(reshapeHandler);
     // glutMouseFunc();
     glutKeyboardFunc(keyHander);
@@ -280,16 +297,9 @@ int main(int argc, char** argv) {
     // printf("A: %f %f\n", triangles[i*3 +2].y, triangles[i*3 +2].z);
     // }
 
-    loadScene(
-        "resources/beach.scene",
-        // "resources/surface.scene",
-        vertecies,
-        triangles,
-        ball_pos,
-        ball_radius
-    );
 
     // skybox = png_texture_load("sky.png", &skybox_wd, &skybox_ht);
+    reloadScene();
     skybox = png_cubemap_load("resources/beach/");
     initShader();
     setupLighting();

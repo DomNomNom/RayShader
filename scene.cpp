@@ -5,13 +5,26 @@
 #include "glm/glm.hpp"
 
 
+
+
 void loadScene(
-    const char* filepath,
+    scene s,
     std::vector<glm::vec4>  &vertecies,
     std::vector<int>        &triangles,
     std::vector<glm::vec4>  &ball_pos,
     std::vector<float>      &ball_radius
 ) {
+
+    vertecies.clear();
+    triangles.clear();
+    ball_pos.clear();
+    ball_radius.clear();
+
+    const char* filepath;
+    switch (s) {
+        case SCENE_BEACH:   filepath = "resources/beach.scene";     break;
+        case SCENE_SURFACE: filepath = "resources/surface.scene";   break;
+    }
     // FILE *fp = fopen(filename, "r");
     // if (fp == NULL)
     //     printf("Error reading %s file\n", filename);
