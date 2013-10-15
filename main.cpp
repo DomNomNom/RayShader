@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <GL/glut.h>
+#include <vector>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -13,7 +14,8 @@
 #include "time.h"
 #include "shader.h"
 #include "textures.h"
-#include "math.h"
+#include "scene.h"
+
 
 using namespace glm;
 
@@ -35,68 +37,16 @@ bool shadeTrace = true;
 
 float PI = acos(0.0) * 2.0;
 
-// TODO move this to a external file
-vec4 vertecies[] = {
-    vec4( 1.0,  0.0,  0.0,          1.0),
-    vec4(-1.0,  0.0,  0.0,          1.0),
-    vec4(0.0,  1.000000,  0.000000, 1.0),
-    vec4(0.0,  0.766044,  0.642788, 1.0),
-    vec4(0.0,  0.173648,  0.984808, 1.0),
-    vec4(0.0, -0.500000,  0.866025, 1.0),
-    vec4(0.0, -0.939693,  0.342020, 1.0),
-    vec4(0.0, -0.939693, -0.342020, 1.0),
-    vec4(0.0, -0.500000, -0.866025, 1.0),
-    vec4(0.0,  0.173649, -0.984808, 1.0),
-    vec4(0.0,  0.766045, -0.642787, 1.0),
-};
-int triangles[] = { // indecies for vertecies[]
-    0, 1, 2,
-    0, 1, 3,
-    0, 1, 4,
-    0, 1, 5,
-    0, 1, 6,
-    0, 1, 7,
-    0, 1, 8,
-    0, 1, 9,
-    0, 1, 10,
-};
-
-// balls.
-vec4 ball_pos[] = {  // positions
-    vec4(0,                 -0.525731,          0.850651,  1.0),
-    vec4(0.850651,           0,                 0.525731,  1.0),
-    vec4(0.850651,           0,                -0.525731,  1.0),
-    vec4(-0.850651,          0,                -0.525731,  1.0),
-    vec4(-0.850651,          0,                 0.525731,  1.0),
-    vec4(-0.525731,          0.850651,          0       ,  1.0),
-    vec4(0.525731,           0.850651,          0       ,  1.0),
-    vec4(0.525731,          -0.850651,          0       ,  1.0),
-    vec4(-0.525731,         -0.850651,          0       ,  1.0),
-    vec4(0,                 -0.525731,         -0.850651,  1.0),
-    vec4(0,                  0.525731,         -0.850651,  1.0),
-    vec4(0,                  0.525731,          0.850651,  1.0),
-};
-float ball_radius[] = {  // radii
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-    0.25,
-};
-int numVertecies  = (sizeof(vertecies) / sizeof(vec4));
-int numTriangles =  (sizeof(triangles) / sizeof(int )) / 3;
-int numBalls =      (sizeof(ball_pos)  / sizeof(vec4));
-
 float modelScale = 0.7;
 
 GLuint skybox;
+
+std::vector<vec4> vertecies;
+std::vector<int> triangles;
+std::vector<vec4> ball_pos;
+std::vector<float> ball_radius;
+
+
 
 
 float light_direction[] = {1.0f, 0.0f, 0.0f};
@@ -114,10 +64,10 @@ mat4 cameraTransform = mat4(1.0f);
 mat4 view = mat4(1.0f);
 void applyView(mat4 viewMatrix) {
     view = viewMatrix;
-    for (int i=0; i<numBalls; ++i) {
+    for (unsigned int i=0; i<ball_pos.size(); ++i) {
         ball_pos[i] = view * ball_pos[i];
     }
-    for (int i=0; i<numVertecies; ++i) {
+    for (unsigned int i=0; i<vertecies.size(); ++i) {
         vertecies[i] = view * vertecies[i];
     }
 }
@@ -162,7 +112,7 @@ void display() {
     // printf("%f %f\n", balls[0], balls[1]);
 
     float minY = 0.0f;
-    for (int i=0; i<numBalls; ++i) {
+    for (unsigned int i=0; i<ball_radius.size(); ++i) {
         ball_radius[i] = mouse_y;
         // ball_radius[i] = 0.01;
 
@@ -200,13 +150,13 @@ void display() {
         shader.bind();
 
         // pass the data to the shader
-        glUniform1i( glGetUniformLocation(shader.id(), "numTriangles"),    numTriangles);
         // glUniform4fv(glGetUniformLocation(shader.id(), "triangles"),    numTriangles*3, value_ptr(triangles[0]) );
-        glUniform4fv(glGetUniformLocation(shader.id(), "vertecies"),    numVertecies, value_ptr(vertecies[0]) );
-        glUniform1iv(glGetUniformLocation(shader.id(), "triangles"),    numTriangles*3, triangles);
-        glUniform1i( glGetUniformLocation(shader.id(), "numBalls"),    numBalls);
-        glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    numBalls, value_ptr(ball_pos[0]) );
-        glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), numBalls, &(ball_radius[0]));
+        glUniform4fv(glGetUniformLocation(shader.id(), "vertecies"),    vertecies.size(), value_ptr(vertecies[0]) );
+        glUniform1iv(glGetUniformLocation(shader.id(), "triangles"),    triangles.size(), &triangles[0] );
+        glUniform1i( glGetUniformLocation(shader.id(), "numTriangles"), triangles.size()/3);
+        glUniform1i( glGetUniformLocation(shader.id(), "numBalls"),    ball_pos.size());
+        glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    ball_pos.size(), value_ptr(ball_pos[0]) );
+        glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), ball_pos.size(), &ball_radius[0]);
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
         glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, &cameraTransform[0][0]);
@@ -230,7 +180,7 @@ void display() {
     else { // openGL render
         glEnable(GL_LIGHTING);
 
-            for (int i=0; i<numBalls; ++i) {
+            for (unsigned int i=0; i<ball_pos.size(); ++i) {
                 glPushMatrix();
                     myTranslate(ball_pos[i]);
                     glutSolidSphere(ball_radius[i], 32, 32);
@@ -238,8 +188,8 @@ void display() {
             }
 
             glBegin(GL_TRIANGLES);
-            for (int i=0; i<numTriangles*3; i+=3) {
-                glVertex3fv(value_ptr(vertecies[triangles[i]]));
+            for (unsigned int i=0; i<triangles.size(); i+=3) {
+                glVertex3fv(value_ptr(vertecies[triangles[i  ]]));
                 glVertex3fv(value_ptr(vertecies[triangles[i+1]]));
                 glVertex3fv(value_ptr(vertecies[triangles[i+2]]));
             }
@@ -330,6 +280,14 @@ int main(int argc, char** argv) {
     // printf("A: %f %f\n", triangles[i*3 +2].y, triangles[i*3 +2].z);
     // }
 
+    loadScene(
+        "resources/beach.scene",
+        // "resources/surface.scene",
+        vertecies,
+        triangles,
+        ball_pos,
+        ball_radius
+    );
 
     // skybox = png_texture_load("sky.png", &skybox_wd, &skybox_ht);
     skybox = png_cubemap_load("resources/beach/");
