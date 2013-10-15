@@ -5,7 +5,8 @@
 
 enum scene {
     SCENE_BEACH,
-    SCENE_SURFACE
+    SCENE_SURFACE,
+    SCENE_WATER
 };
 
 void loadScene(

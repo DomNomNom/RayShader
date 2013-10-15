@@ -24,6 +24,7 @@ void loadScene(
     switch (s) {
         case SCENE_BEACH:   filepath = "resources/beach.scene";     break;
         case SCENE_SURFACE: filepath = "resources/surface.scene";   break;
+        case SCENE_WATER:   filepath = "resources/water.scene";     break;
     }
     // FILE *fp = fopen(filename, "r");
     // if (fp == NULL)
