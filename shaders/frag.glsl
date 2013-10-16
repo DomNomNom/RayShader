@@ -38,6 +38,7 @@ int HIT_TYPE_WATER    = 4;
 float PI = acos(0.0)*2.0; // 3.14...
 vec2 leftFront = normalize(vec2(1.0, 1.0));
 
+// ====== ret ======
 
 // re-tracing information
 struct ret {
@@ -49,7 +50,6 @@ struct ret {
     int thing; // the index of what we collided with
 };
 
-// ====== functions ======
 
 // returns a new ret saying that there was no hit
 ret noHit() {
@@ -62,6 +62,16 @@ ret noHit() {
         0
     );
 }
+
+
+// if B is closer than A, the contents of B are put in A
+ret min_ret(ret a, ret b) {
+    if (a.hit == HIT_TYPE_NO_HIT || b.t < a.t)
+        return b;
+    return a;
+}
+
+// ====== functions ======
 
 vec2 randomV = v.xy * sin(time);
 float rand() {
@@ -125,26 +135,8 @@ ret trace_water(vec4 eye, vec4 dir) {
     return r;
 }
 
-// if B is closer than A, the contents of B are put in A
-void min_ret(ret a, ret b) {
-    // if ()
-}
-
-// the returned r.dir is NOT reflected
-ret trace(vec4 eye, vec4 dir) {
-    dir = normalize(dir);
-
+ret trace_triangles(vec4 eye, vec4 dir) {
     ret r = noHit();
-    r.dir = dir;
-
-    // int closestType = HIT_TYPE_NO_HIT;
-    // float closestOffset = -1.0; // should be positive multiples of dir
-    // int closestThing = 0; // index of a array of the type (either triangles or spheres)
-
-    // vec4 closestIntersect = vec4(0.0);
-    // vec4 closestNormal    = vec4(0.0);
-
-
     for (int i=0; i<numTriangles*3; i+=3) {
 
         // Möller Trumbore method
@@ -222,7 +214,11 @@ ret trace(vec4 eye, vec4 dir) {
         //     }
         // }
     }
+    return r;
+}
 
+ret trace_spheres(vec4 eye, vec4 dir) {
+    ret r = noHit();
 
     // find the best ball
     for (int i=0; i<numBalls; ++i) {
@@ -244,43 +240,22 @@ ret trace(vec4 eye, vec4 dir) {
         }
     }
 
-
-    // render the closest object
     return r;
-    // return ret(
-    //     closestNormal,
-    //     closestIntersect,
-    //     dir, // return the previous style
-    //     closestType,
-    //     closestThing
-    // );
+}
 
-    // if (closestType == HIT_TYPE_SPHERE) {
-    //     closestNormal =
-    //     return ret(
-    //         vec4(1.0, 0.0, 0.0, 0.0) * diffuse(closestNormal),
-    //         closestIntersect,
-    //         reflect(dir, closestNormal),
-    //         true
-    //     );
-    // }
-    // else if (closestType == HIT_TYPE_TRIANGLE) {
-    //     return ret(
-    //         vec4(1.0, 0.0, 0.0, 0.0) * diffuse2(closestNormal),
-    //         closestIntersect,
-    //         reflect(dir, closestNormal),
-    //         true
-    //     );
-    // }
-    // else { // no hit
-    //     return ret(
-    //         vec4(0.0, 0.0, 0.0, 0.0), //specular(dir),
-    //         vec4(0.0, 0.0, 0.0, 0.0),
-    //         dir,
-    //         false
-    //     );
-    // }
+// the returned r.dir is NOT reflected
+ret trace(vec4 eye, vec4 dir) {
+    dir = normalize(dir);
 
+    ret r = noHit();
+    r = min_ret(
+        trace_spheres(eye, dir),
+        trace_triangles(eye, dir)
+    );
+
+
+    r.dir = dir;
+    return r;
 }
 
 
