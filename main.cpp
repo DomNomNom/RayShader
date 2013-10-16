@@ -15,7 +15,7 @@
 #include "shader.h"
 #include "textures.h"
 #include "scene.h"
-
+#include "Liquid.h"
 
 using namespace glm;
 
@@ -39,8 +39,6 @@ float mouse_x = 0.5;
 float mouse_y = 0.5;
 
 bool shadeTrace = true;
-
-float PI = acos(0.0) * 2.0;
 
 float modelScale = 0.7;
 
@@ -74,6 +72,7 @@ GLfloat material_ambient[]  = {1.0, 1.0, 1.0, 1.0};
 GLfloat material_specular[] = {8.8, 8.8, 8.8, 1.0};
 GLfloat material_shininess[] = {89};
 
+Liquid gLiquid;
 
 mat4 cameraTransform = mat4(1.0f);
 // mat4 view = mat4(1.0f);
@@ -89,6 +88,7 @@ mat4 cameraTransform = mat4(1.0f);
 // void undoView() {
 //     applyView(inverse(view));
 // }
+
 
 void printVec(vec4 *v){
     printf(
@@ -211,6 +211,8 @@ void display() {
     else { // openGL render
         glEnable(GL_LIGHTING);
 
+            gLiquid.render(false);
+
             for (unsigned int i=0; i<ball_pos.size(); ++i) {
                 glPushMatrix();
                     myTranslate(ball_pos[i]);
@@ -235,6 +237,10 @@ void display() {
     glutPostRedisplay();
 }
 
+void idle() {
+
+    gLiquid.update();
+}
 
 void setupLighting() {
     glPushMatrix();
@@ -305,7 +311,7 @@ int main(int argc, char** argv) {
     window = glutCreateWindow("RayShader");
 
     glutDisplayFunc(display);
-    // glutIdleFunc(display);
+    glutIdleFunc(idle);
     glutReshapeFunc(reshapeHandler);
     // glutMouseFunc();
     glutKeyboardFunc(keyHander);
