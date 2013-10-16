@@ -32,6 +32,7 @@ int HIT_TYPE_NO_HIT   = 0;
 int HIT_TYPE_SPHERE   = 1;
 int HIT_TYPE_TRIANGLE = 2;
 int HIT_TYPE_INITIAL  = 3;
+int HIT_TYPE_WATER    = 4;
 
 // re-tracing information
 struct ret {
@@ -77,13 +78,44 @@ vec4 specular(vec4 dir) {
 float diffuse (vec4 normal) {  return clamp(dot(normal, vertex_light_position), 0.0, 1.0); }
 float diffuse2(vec4 normal) {  return   abs(dot(normal, vertex_light_position)          ); } // a two-sided version.
 
-// ret trace_water(vec4 eye, vec4 dir) {
-//     closestT = 0;
-//     ret r = ret(vec4(0.0, 0.0, dir, HIT_TYPE_NO_HIT, 0));
-//     for (int i=0; i<numWater-1; ++i) {
-//         vec
-//     }
-// }
+bool floatZero(float f) {
+    return !(f<0.0 && f>0.0);
+}
+
+ret trace_water(vec4 eye, vec4 dir) {
+    float closestT = 0.0;
+    ret r = ret(vec4(0.0), vec4(0.0), dir, HIT_TYPE_NO_HIT, 0);
+    vec3 v = vec3(dir.xy, 0.0);
+    for (int i=0; i<numWater-1; ++i) {
+        // ray segment intersection from: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+        vec3 p0 = vec3(water[i  ].xy, 0.0);
+        vec3 p1 = vec3(water[i+1].xy, 0.0);
+        vec3 s = p0-p1;
+
+        float c = cross(v, s);
+        if (floatZero(c)) continue; // parallel case
+        float t = cross(p0 - eye.xyz, s) / c;
+        float u = cross(p0 - eye.xyz, v) / c;
+
+        if (u < 0.0 || u > 1.0) continue; // not in segment range
+
+        if (t < closestT || closestT==0.0) { // further away
+            closestT = t;
+            r.eye = eye + t*dir;
+            r.hit = HIT_TYPE_WATER;
+            r.normal = vec4(normalize(
+                mix(water_normals[i], water_normals[i+1], u)
+            ), 0.0);
+        }
+    }
+
+    return r;
+}
+
+// if B is closer than A, the contents of B are put in A
+void min_ret(ret a, ret b) {
+    // if ()
+}
 
 // the returned r.dir is NOT reflected
 ret trace(vec4 eye, vec4 dir) {
