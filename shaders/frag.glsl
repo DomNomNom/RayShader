@@ -142,7 +142,11 @@ ret trace_water(vec4 eye, vec4 dir) {
                     water_normals[i+1],
                     smoothstep(0.0, 1.0, u)
                 )
-                // + 0.1*vec3(0.0, 0.0, sin(intersect.z * 10.0))
+                + 0.1*vec3( // add a fake ripple
+                    cos((intersect.x+intersect.z*0.3)*13.0 + time*-3.0),
+                    0.0,
+                    cos((intersect.x)*10.0 + time*4.0) + sin(intersect.z*10.0 +time*1.0)
+                )
             ), 0.0);
         }
     }
