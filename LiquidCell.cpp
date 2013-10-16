@@ -57,52 +57,54 @@ void LiquidCell::render(const glm::vec3& offset) {
         float quaterSize = mSize / 4.0f;
         float x1 = offset.x + quaterSize;
         float x2 = offset.x + (quaterSize * 3.0f);
+        float xMid = x1 + ((x2 - x1) / 2.0f);
         float y1 = offset.y + quaterSize;
         float y2 = offset.y + (quaterSize * 3.0f);
         float z1 = offset.z + quaterSize;
         float z2 = offset.z + (quaterSize * 3.0f);
+        float zMid = z1 + ((z2 - z1) / 2.0f);
 
-        glColor4f(0.5f, 0.8f, 1.0f, 1.0f);
+        glColor4f(0.3f, 0.0f, 0.8f, 1.0f);
 
         glBegin(GL_QUADS);
 
             //front face
-            //glNormal3f(0.0f, 0.0f, 1.0f);
+            glNormal3f(0.0f, 0.0f, 1.0f);
             glVertex3f(x2, y1, z2);
             glVertex3f(x2, y2, z2);
             glVertex3f(x1, y2, z2);
             glVertex3f(x1, y1, z2);
 
             //back face
-            //glNormal3f(0.0f, 0.0f, -1.0f);
+            glNormal3f(0.0f, 0.0f, -1.0f);
             glVertex3f(x1, y1, z1);
             glVertex3f(x1, y2, z1);
             glVertex3f(x2, y2, z1);
             glVertex3f(x2, y1, z1);
 
             //left face
-            //glNormal3f(-1.0f, 0.0f, 0.0f);
+            glNormal3f(-1.0f, 0.0f, 0.0f);
             glVertex3f(x1, y1, z2);
             glVertex3f(x1, y2, z2);
             glVertex3f(x1, y2, z1);
             glVertex3f(x1, y1, z1);
 
             //right face
-            //glNormal3f(1.0f, 0.0f, 0.0f);
+            glNormal3f(1.0f, 0.0f, 0.0f);
             glVertex3f(x2, y1, z1);
             glVertex3f(x2, y2, z1);
             glVertex3f(x2, y2, z2);
             glVertex3f(x2, y1, z2);
 
             //top face
-            //glNormal3f(0.0f, 1.0f, 0.0f);
+            glNormal3f(0.0f, 1.0f, 0.0f);
             glVertex3f(x1, y2, z1);
             glVertex3f(x1, y2, z2);
             glVertex3f(x2, y2, z2);
             glVertex3f(x2, y2, z1);
 
             //bottom face
-            //glNormal3f(0.0f, -1.0f, 0.0f);
+            glNormal3f(0.0f, -1.0f, 0.0f);
             glVertex3f(x2, y1, z1);
             glVertex3f(x2, y1, z2);
             glVertex3f(x1, y1, z2);

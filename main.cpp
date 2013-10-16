@@ -37,6 +37,7 @@ char window_title[200];
 
 float mouse_x = 0.5;
 float mouse_y = 0.5;
+float zoom = 1.0f;
 
 enum RenderMode {
 
@@ -128,6 +129,19 @@ float openglCoords(float val) {
     return 2.0*val - 1.0;
 }
 
+//applies lighting
+void setupLighting() {
+
+    glPushMatrix();
+        glRotatef(60, 0, 0, 1);
+        glRotatef(30, 0, 1, 0);
+        glLightfv(GL_LIGHT0, GL_POSITION, light_direction);
+        glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
+        glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
+        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    glPopMatrix();
+}
+
 void display() {
     seconds += time_dt();
     framecount += 1;
@@ -144,6 +158,9 @@ void display() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
+
+    // //clear colour
+    // glClearColor(0.0, 0.0, 0.0, 1.0);
 
     // printf("%f\n", modelScale);
     // ball_pos[0].x = openglCoords(mouse_x);
@@ -165,7 +182,7 @@ void display() {
 
 
     // how the camera is transformed
-    cameraTransform = mat4(1.0f);
+    cameraTransform = mat4(zoom);
     cameraTransform = rotate(cameraTransform, mouse_x * 2.0f *-360.0f, vec3(0.0f, 1.0f, 0.0f));
     cameraTransform = rotate(cameraTransform, mouse_y * -180.0f+90.0f, vec3(1.0f, 0.0f, 0.0f));
     cameraTransform = translate(cameraTransform, vec3(0.0, 0.0, -2.0));
@@ -232,10 +249,10 @@ void display() {
     else if (renderMode == LIQUID_ONLY) {
 
         glEnable(GL_LIGHTING);
-        // glEnable(GL_COLOR_MATERIAL);
-        // glEnable(GL_LIGHT0);
 
-        //set the perspective
+        //set the clear colour
+        glClearColor(0.8, 0.8, 0.8, 1.0);
+
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         gluPerspective(60.0f, window_wd / window_ht, 0.1f, 1000.0f);
@@ -243,14 +260,39 @@ void display() {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
+        //shift the camera back
+        glTranslatef(0.0f, 0.0f, -zoom * 3.0f);
+
+        //rotate the camera position
+        glm::vec2 rot(mouse_x * 2.0f * -360.0f, mouse_y * 2.0f * 360.0f);
+        glRotatef(rot.x,  0.0f, 1.0f, 0.0f);
+        glRotatef(rot.y,
+            cos(rot.x * DEGREES_TO_RADIANS), 0, 
+            sin(rot.x * DEGREES_TO_RADIANS));
+
+        //apply lighting
+        float direction[]     = {1.0f, 1.0f, 0.0f, 0.0f};
+        float diffintensity[] = {0.4f, 0.4f, 0.4f, 1.0f};
+        float ambient[]       = {0.4f, 0.4f, 0.4f, 1.0f};
+
+        glLightfv(GL_LIGHT0, GL_POSITION, direction);
+        glLightfv(GL_LIGHT0, GL_DIFFUSE,  diffintensity);
+        glLightfv(GL_LIGHT0, GL_AMBIENT,  ambient);
+
         g_Liquid.render(liquid::GRID);
 
         //reset the projection to the identity
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
 
+        //reset the model view matrix
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
         glDisable(GL_LIGHTING);
-        // glDisable(GL_COLOR_MATERIAL);
+
+        //reset lights
+        setupLighting();
     }
     else {
 
@@ -258,7 +300,7 @@ void display() {
 
             g_Liquid.render(liquid::GRID);
 
-            glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
+            glColor4f(0.9f, 0.5f, 0.5f, 1.0f);
 
             for (unsigned int i=0; i<ball_pos.size(); ++i) {
                 glPushMatrix();
@@ -288,19 +330,6 @@ void idle() {
 
     g_Liquid.update();
 }
-
-void setupLighting() {
-    glPushMatrix();
-        glRotatef(60, 0, 0, 1);
-        glRotatef(30, 0, 1, 0);
-        glLightfv(GL_LIGHT0, GL_POSITION, light_direction);
-        glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
-        glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
-        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-    glPopMatrix();
-}
-
-
 
 void initShader() {
     shader.init(
@@ -347,7 +376,34 @@ void reshapeHandler(int, int ht) {
 void mouseMoveHander(int x, int y){
     mouse_x = x/(float)window_wd;
     mouse_y = y/(float)window_ht;
-    glutPostRedisplay();
+    //glutPostRedisplay();
+}
+
+void mouseButtonHandler(int button, int state, int x, int y) {
+
+    switch(button) {
+
+        case 3: {
+
+            zoom -= 0.03f;
+            break;
+        }
+        case 4: {
+
+            zoom += 0.03f;
+            break;
+        }
+    }
+
+    //clamp
+    if (zoom < 0.5f) {
+
+        zoom = 0.5f;
+    }
+    else if (zoom > 1.7f) {
+
+        zoom = 1.7f;
+    }
 }
 
 int main(int argc, char** argv) {
@@ -361,10 +417,10 @@ int main(int argc, char** argv) {
     glutDisplayFunc(display);
     glutIdleFunc(idle);
     glutReshapeFunc(reshapeHandler);
-    // glutMouseFunc();
     glutKeyboardFunc(keyHander);
     glutMotionFunc(mouseMoveHander);
     glutPassiveMotionFunc(mouseMoveHander);
+    glutMouseFunc(mouseButtonHandler);
 
     // // initialize triangles
     // for (int i=0; i<numTriangles; ++i) {
@@ -374,11 +430,11 @@ int main(int argc, char** argv) {
     // printf("A: %f %f\n", triangles[i*3 +2].y, triangles[i*3 +2].z);
     // }
 
-
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClearDepth(1000);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_CULL_FACE);
@@ -393,6 +449,7 @@ int main(int argc, char** argv) {
     skybox = png_cubemap_load("resources/beach/");
     initShader();
     setupLighting();
+
     glutMainLoop();
 
     return 0;
