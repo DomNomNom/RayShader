@@ -284,6 +284,7 @@ void main() {
 
     gl_FragColor += specular(r.dir) * pow(0.85, bounce);
     gl_FragColor *= shadow;
+    gl_FragColor.a = 1.0;
 
 
     // gl_FragColor = vec4(rand3D(), 0.0);

@@ -38,7 +38,14 @@ char window_title[200];
 float mouse_x = 0.5;
 float mouse_y = 0.5;
 
-bool shadeTrace = true;
+enum RenderMode {
+
+    SHADE_TRACE = 0,
+    LIQUID_ONLY,
+    OPENGL
+};
+
+RenderMode renderMode = SHADE_TRACE;
 
 float modelScale = 0.7;
 
@@ -59,6 +66,7 @@ bool skybox_enabled = true;
 std::vector<vec3> water;
 std::vector<vec3> water_normals;
 float turbulent_min, turbulent_max;
+float water_bottom;
 
 
 // lights
@@ -72,7 +80,13 @@ GLfloat material_ambient[]  = {1.0, 1.0, 1.0, 1.0};
 GLfloat material_specular[] = {8.8, 8.8, 8.8, 1.0};
 GLfloat material_shininess[] = {89};
 
-Liquid gLiquid;
+Liquid g_Liquid(
+    &water,
+    &water_normals,
+    &turbulent_min,
+    &turbulent_max,
+    &water_bottom
+);
 
 mat4 cameraTransform = mat4(1.0f);
 // mat4 view = mat4(1.0f);
@@ -168,7 +182,9 @@ void display() {
 
     // triangles[0].x = openglCoords(mouse_x);
 
-    if (shadeTrace) {
+    if (renderMode == SHADE_TRACE) {
+
+        g_Liquid.render(liquid::RAYTRACE);
 
         // pass texture samplers
         glActiveTexture(GL_TEXTURE0);
@@ -198,25 +214,51 @@ void display() {
         glUniform1f( glGetUniformLocation(shader.id(), "time"), seconds); //Texture unit 0
         glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, value_ptr(cameraTransform));
 
-        float r = 10.0;
+        float tv = 10.0;
         glColor3f(1,0,0);
         glBegin(GL_TRIANGLES);
             // two triangles that cover the screen
-            glVertex3f(-r,-r, 0.0);
-            glVertex3f( r,-r, 0.0);
-            glVertex3f(-r, r, 0.0);
+            glVertex3f(-tv,-tv, 0.0);
+            glVertex3f( tv,-tv, 0.0);
+            glVertex3f(-tv, tv, 0.0);
 
-            glVertex3f( r, r, 0.0);
-            glVertex3f( r,-r, 0.0);
-            glVertex3f(-r, r, 0.0);
+            glVertex3f( tv, tv, 0.0);
+            glVertex3f(-tv, tv, 0.0);
+            glVertex3f( tv,-tv, 0.0);
         glEnd();
 
         shader.unbind();
     }
-    else { // openGL render
+    else if (renderMode == LIQUID_ONLY) {
+
+        glEnable(GL_LIGHTING);
+        // glEnable(GL_COLOR_MATERIAL);
+        // glEnable(GL_LIGHT0);
+
+        //set the perspective
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluPerspective(60.0f, window_wd / window_ht, 0.1f, 1000.0f);
+
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        g_Liquid.render(liquid::GRID);
+
+        //reset the projection to the identity
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+
+        glDisable(GL_LIGHTING);
+        // glDisable(GL_COLOR_MATERIAL);
+    }
+    else {
+
         glEnable(GL_LIGHTING);
 
-            gLiquid.render(false);
+            g_Liquid.render(liquid::GRID);
+
+            glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
 
             for (unsigned int i=0; i<ball_pos.size(); ++i) {
                 glPushMatrix();
@@ -244,7 +286,7 @@ void display() {
 
 void idle() {
 
-    gLiquid.update();
+    g_Liquid.update();
 }
 
 void setupLighting() {
@@ -255,7 +297,6 @@ void setupLighting() {
         glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
         glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
         glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-        glEnable(GL_LIGHT0);
     glPopMatrix();
 }
 
@@ -290,7 +331,9 @@ void keyHander(unsigned char key, int, int) {
         case '1': currentScene = SCENE_BEACH;      reloadScene();   break;
         case '2': currentScene = SCENE_SURFACE;    reloadScene();   break;
         case '3': currentScene = SCENE_WATER;      reloadScene();   break;
-        case 's': shadeTrace = !shadeTrace;                         break;
+        case 'a': renderMode = OPENGL;                              break;
+        case 's': renderMode = SHADE_TRACE;                         break;
+        case 'd': renderMode = LIQUID_ONLY;                         break;
         case 'l': skybox_enabled = !skybox_enabled;                 break;
     }
     glutPostRedisplay();
@@ -331,6 +374,19 @@ int main(int argc, char** argv) {
     // printf("A: %f %f\n", triangles[i*3 +2].y, triangles[i*3 +2].z);
     // }
 
+
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClearDepth(1000);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_COLOR_MATERIAL);
+    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+    glEnable(GL_LIGHT0);
 
     // skybox = png_texture_load("sky.png", &skybox_wd, &skybox_ht);
     reloadScene();
