@@ -3,8 +3,14 @@
 #include "glm/glm.hpp"
 
 
+enum scene {
+    SCENE_BEACH,
+    SCENE_SURFACE,
+    SCENE_WATER
+};
+
 void loadScene(
-    const char* filepath,
+    scene s,
     std::vector<glm::vec4>  &vertecies,
     std::vector<int>        &triangles,
     std::vector<glm::vec4>  &ball_pos,

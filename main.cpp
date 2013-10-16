@@ -15,7 +15,7 @@
 #include "shader.h"
 #include "textures.h"
 #include "scene.h"
-
+#include "Liquid.h"
 
 using namespace glm;
 
@@ -29,26 +29,39 @@ int window_wd = 600;
 int window_ht = 600;
 float aspectRatio = window_wd / window_ht;
 
-float mouse_x = 0.5;
-float mouse_y = 0.25;
+int framecount = 0;
 float seconds = 0;
+float seconds_floor = 0; // floor(seconds)
+
+char window_title[200];
+
+float mouse_x = 0.5;
+float mouse_y = 0.5;
 
 bool shadeTrace = true;
 
-float PI = acos(0.0) * 2.0;
-
 float modelScale = 0.7;
 
-GLuint skybox;
 
+
+// scene specifications
+scene currentScene = SCENE_WATER;
 std::vector<vec4> vertecies;
 std::vector<int> triangles;
 std::vector<vec4> ball_pos;
 std::vector<float> ball_radius;
+GLuint skybox;
+bool skybox_enabled = true;
 
 
 
+// modified by water simulation
+std::vector<vec3> water;
+std::vector<vec3> water_normals;
+int trbulentuMin, trbulentuMax;
 
+
+// lights
 float light_direction[] = {1.0f, 0.0f, 0.0f};
 GLfloat light_ambient[]     = {0.1, 0.1, 0.1, 1.0};
 GLfloat light_diffuse[]     = {0.7, 0.7, 0.7, 1.0};
@@ -59,21 +72,23 @@ GLfloat material_ambient[]  = {1.0, 1.0, 1.0, 1.0};
 GLfloat material_specular[] = {8.8, 8.8, 8.8, 1.0};
 GLfloat material_shininess[] = {89};
 
+Liquid gLiquid;
 
 mat4 cameraTransform = mat4(1.0f);
-mat4 view = mat4(1.0f);
-void applyView(mat4 viewMatrix) {
-    view = viewMatrix;
-    for (unsigned int i=0; i<ball_pos.size(); ++i) {
-        ball_pos[i] = view * ball_pos[i];
-    }
-    for (unsigned int i=0; i<vertecies.size(); ++i) {
-        vertecies[i] = view * vertecies[i];
-    }
-}
-void undoView() {
-    applyView(inverse(view));
-}
+// mat4 view = mat4(1.0f);
+// void applyView(mat4 viewMatrix) {
+//     view = viewMatrix;
+//     for (unsigned int i=0; i<ball_pos.size(); ++i) {
+//         ball_pos[i] = view * ball_pos[i];
+//     }
+//     for (unsigned int i=0; i<vertecies.size(); ++i) {
+//         vertecies[i] = view * vertecies[i];
+//     }
+// }
+// void undoView() {
+//     applyView(inverse(view));
+// }
+
 
 void printVec(vec4 *v){
     printf(
@@ -101,6 +116,16 @@ float openglCoords(float val) {
 
 void display() {
     seconds += time_dt();
+    framecount += 1;
+    if (floor(seconds) > seconds_floor) { // we are in a new second
+        seconds_floor = floor(seconds);
+        // window_title[0] = '\0'; // clear string
+        // strcat(window_title, "RayShader  ");
+        sprintf(window_title, "RayShader  %2dfps", framecount);
+        glutSetWindowTitle(window_title);
+        framecount = 0;
+    }
+
     // printf("time %f\n", seconds);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -111,31 +136,34 @@ void display() {
     // ball_pos[0].y = -openglCoords(mouse_y);
     // printf("%f %f\n", balls[0], balls[1]);
 
-    float minY = 0.0f;
-    for (unsigned int i=0; i<ball_radius.size(); ++i) {
-        ball_radius[i] = mouse_y;
-        // ball_radius[i] = 0.01;
+    // float minY = 0.0f;
+    // for (unsigned int i=0; i<ball_radius.size(); ++i) {
+    //     // ball_radius[i] = mouse_y;
+    //     ball_radius[i] = 0.15;
 
-        // set the floor to be the lowest possible point
-        minY = min(minY, ball_pos[i].y - ball_radius[i]);
-    }
+    //     // set the floor to be the lowest possible point
+    //     minY = min(minY, ball_pos[i].y - ball_radius[i]);
+    // }
     // for (int i=1*3; i<3*3; i+=3) {
     //     triangles[i].y = minY;
     // }
     // triangles[8].y = 40 * openglCoords( mouse_y);
 
 
-    mat4 transform = mat4(1.0f);
-    cameraTransform = rotate(transform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
-    cameraTransform = rotate(transform, 0.0f, vec3(0.0f, 1.0f, 0.0f));
+    // how the camera is transformed
+    cameraTransform = mat4(1.0f);
+    cameraTransform = rotate(cameraTransform, mouse_x * 2.0f *-360.0f, vec3(0.0f, 1.0f, 0.0f));
+    cameraTransform = rotate(cameraTransform, mouse_y * -180.0f+90.0f, vec3(1.0f, 0.0f, 0.0f));
+    cameraTransform = translate(cameraTransform, vec3(0.0, 0.0, -2.0));
 
 
-    modelScale = mouse_x+0.1f;
-    modelScale = 0.7f;
+    // modelScale = mouse_x+0.1f;
+    // modelScale = 0.7f;
+    // mat4 transform = mat4(1.0f);
     // transform = scale(transform, vec3(modelScale, modelScale, modelScale));
-    transform = rotate(transform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
+    // transform = rotate(transform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
     // transform = rotate(transform, seconds * 50.0f, vec3(0.0f, 1.0f, 0.0f));
-    applyView(transform);
+    // applyView(transform);
     // printVec(triangles+1);
 
     // triangles[0].x = openglCoords(mouse_x);
@@ -157,9 +185,12 @@ void display() {
         glUniform1i( glGetUniformLocation(shader.id(), "numBalls"),    ball_pos.size());
         glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    ball_pos.size(), value_ptr(ball_pos[0]) );
         glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), ball_pos.size(), &ball_radius[0]);
+        glUniform3fv(glGetUniformLocation(shader.id(), "water"        ), water.size(), value_ptr(water        [0]));
+        glUniform3fv(glGetUniformLocation(shader.id(), "water_normals"), water.size(), value_ptr(water_normals[0]));
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
-        glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, &cameraTransform[0][0]);
+        glUniform1i( glGetUniformLocation(shader.id(), "skybox_enabled"), skybox_enabled); //Texture unit 0
+        glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, value_ptr(cameraTransform));
         glUniform1f( glGetUniformLocation(shader.id(), "time"), seconds); //Texture unit 0
 
         float r = 10.0;
@@ -180,6 +211,8 @@ void display() {
     else { // openGL render
         glEnable(GL_LIGHTING);
 
+            gLiquid.render(false);
+
             for (unsigned int i=0; i<ball_pos.size(); ++i) {
                 glPushMatrix();
                     myTranslate(ball_pos[i]);
@@ -198,12 +231,16 @@ void display() {
         glDisable(GL_LIGHTING);
     }
 
-    undoView();
+    // undoView();
 
     glutSwapBuffers();
-
+    glutPostRedisplay();
 }
 
+void idle() {
+
+    gLiquid.update();
+}
 
 void setupLighting() {
     glPushMatrix();
@@ -226,6 +263,16 @@ void initShader() {
     );
 }
 
+void reloadScene() {
+    loadScene(
+        currentScene,
+        vertecies,
+        triangles,
+        ball_pos,
+        ball_radius
+    );
+}
+
 void keyHander(unsigned char key, int, int) {
     switch (key) {
         case 27: // Escape -> exit
@@ -235,10 +282,11 @@ void keyHander(unsigned char key, int, int) {
         case 13:  // Enter -> refresh shader
             initShader();
             break;
-        case 's':
-            shadeTrace = !shadeTrace;
-            break;
-
+        case '1': currentScene = SCENE_BEACH;      reloadScene();   break;
+        case '2': currentScene = SCENE_SURFACE;    reloadScene();   break;
+        case '3': currentScene = SCENE_WATER;      reloadScene();   break;
+        case 's': shadeTrace = !shadeTrace;                         break;
+        case 'l': skybox_enabled = !skybox_enabled;                 break;
     }
     glutPostRedisplay();
 }
@@ -254,8 +302,6 @@ void mouseMoveHander(int x, int y){
     glutPostRedisplay();
 }
 
-
-
 int main(int argc, char** argv) {
     time_init();
 
@@ -265,7 +311,7 @@ int main(int argc, char** argv) {
     window = glutCreateWindow("RayShader");
 
     glutDisplayFunc(display);
-    glutIdleFunc(display);
+    glutIdleFunc(idle);
     glutReshapeFunc(reshapeHandler);
     // glutMouseFunc();
     glutKeyboardFunc(keyHander);
@@ -280,16 +326,9 @@ int main(int argc, char** argv) {
     // printf("A: %f %f\n", triangles[i*3 +2].y, triangles[i*3 +2].z);
     // }
 
-    loadScene(
-        "resources/beach.scene",
-        // "resources/surface.scene",
-        vertecies,
-        triangles,
-        ball_pos,
-        ball_radius
-    );
 
     // skybox = png_texture_load("sky.png", &skybox_wd, &skybox_ht);
+    reloadScene();
     skybox = png_cubemap_load("resources/beach/");
     initShader();
     setupLighting();
