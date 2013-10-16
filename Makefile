@@ -1,4 +1,4 @@
-CC = g++
+CC = clang
 CFLAGS = -g -Wall -Wextra -pedantic
 IPATH = -I/usr/X11/include -I/usr/pkg/include -I./include
 LPATH = -L/usr/X11/lib -L/usr/pkg/lib

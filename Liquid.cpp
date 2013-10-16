@@ -42,7 +42,7 @@ Liquid::Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
                 if (y < GRID_DIM.y / 2.0f) {
 
                     cell->init(false);
-                }   
+                }
                 else {
 
                     cell->init(true);
@@ -249,6 +249,13 @@ void Liquid::renderBorder() {
     glEnd();
 }
 
+// roates the given vector 90 degrees anticlockwise along the z axis
+void rotate90(glm::vec3 *v){
+    float x = v->x;
+    v->x =  v->y;
+    v->y = -x;
+}
+
 void Liquid::computeHeightMap() {
 
     unsigned turbMax = GRID_DIM.y - 1;
@@ -261,7 +268,7 @@ void Liquid::computeHeightMap() {
     for (unsigned x = 0; x < GRID_DIM.x; ++x) {
 
         //probe down to find the first non-empty cell
-        for (unsigned y = GRID_DIM.y - 1; y >= 0; --y) {
+        for (unsigned y = GRID_DIM.y - 1; /*end condition at bottom*/; --y) {
 
             if (!mGrid[0][y][x]->isEmpty()) {
 
@@ -283,11 +290,42 @@ void Liquid::computeHeightMap() {
                 hy += y * m_CellSize;
 
                 m_HeightMap->push_back(glm::vec3(hx, hy, m_CellSize));
-                m_NormalMap->push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+
 
                 break;
             }
+
+            if (y==0) {
+                printf("collumn was empty, this would've caused a infinite loop\n");
+                printf("Thanks for gcc to point this out, thanks to dom for fixing it\n\n");
+                break;
+            }
         }
+    }
+
+    // compute normals
+    for (unsigned int i=0; i<m_HeightMap->size(); ++i) {
+        glm::vec3 ht = (*m_HeightMap)[i];
+
+        // make copies of left and right points, if none exist, they are the same height
+        unsigned int index_L = (i == 0)? 0 : i-1;
+        unsigned int index_R = glm::min(i+1, (unsigned int)m_HeightMap->size()-1);
+        glm::vec3 L = glm::vec3((*m_HeightMap)[index_L]);
+        glm::vec3 R = glm::vec3((*m_HeightMap)[index_R]);
+        L.x = ht.x - m_CellSize; // force them to be to the left/right
+        R.x = ht.x + m_CellSize;
+
+        // convert them to normalized tangents towards +x
+        L = glm::normalize(ht - L);
+        R = glm::normalize(R - ht);
+
+        // rotate them 90 degrees counter-clockwise to be a normal of the line
+        rotate90(&L);
+        rotate90(&R);
+
+        // printf("%f %f %f\n", R.x, R.y, R.z);
+        // the final normal is a average of the two
+        m_NormalMap->push_back(glm::normalize(L + R));
     }
 
     //set the turbulent min and max

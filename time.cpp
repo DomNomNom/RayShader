@@ -42,5 +42,3 @@ void time_init() {
 #endif
     time_dt();
 }
-
-

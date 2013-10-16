@@ -210,6 +210,13 @@ void display() {
 
         shader.bind();
 
+        // // print out our normals
+        // printf("w ");
+        // for (unsigned int i=0; i<water_normals.size(); ++i) {
+        //     printf("%.1f", water_normals[i].y);
+        // }
+        // printf("\n");
+
         // pass the data to the shader
         // glUniform4fv(glGetUniformLocation(shader.id(), "triangles"),    numTriangles*3, value_ptr(triangles[0]) );
         glUniform4fv(glGetUniformLocation(shader.id(), "vertecies"),    vertecies.size(), value_ptr(vertecies[0]) );
