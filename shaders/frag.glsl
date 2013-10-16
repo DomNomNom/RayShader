@@ -42,7 +42,7 @@ vec2 leftFront = normalize(vec2(1.0, 1.0));
 
 vec2 randomV = v.xy * sin(time);
 float rand() {
-    float random = fract(sin(dot(randomV.xy, vec2(12.9898, 78.233)))* 43758.5453);
+    float random = fract(sin(dot(randomV.xy, vec2(12.9898, 78.233)))* 43758.5453)  *2.0 - 1.0;
     randomV = vec2(random, randomV.y);
     return random;
 }
@@ -199,12 +199,12 @@ void main() {
     gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
     ret r = ret(
         vec4(0.0),
-        cameraTransform * vec4(0.0, 0.0, -3.0, 1.0),
-        cameraTransform * normalize(vec4(v.xy, 2.0, 0.0)),
+        cameraTransform * vec4(0.0, 0.0, 0.0, 1.0),
+        cameraTransform * normalize(vec4(v.xy, 1.5, 0.0)), // decrease the y component for more FoV
         true
     );
 
-
+    float shadow = 1.0;
     float bounce;
     for (bounce=0.0; r.hit && bounce<7.0; bounce+=1.0) {
         r = trace(r.eye, r.dir);
@@ -212,8 +212,10 @@ void main() {
         if (r.hit) {
             // result += vec4(0.2, 0.0, 0.0, 0.0); // ambient
             vec4 diffuse = r.colour * pow(0.0, bounce+1.0);
-            if (trace(r.eye, vertex_light_position).hit) // shadow
-                diffuse *= 0.7;
+            ret shadow_ret = trace(r.eye, vertex_light_position+ vec4(rand3D() * 0.05, 0.0));
+            if (shadow_ret.hit) { // shadow
+                shadow *= 0.75;
+            }
             gl_FragColor += diffuse;
         }
 
@@ -221,7 +223,10 @@ void main() {
 
 
     gl_FragColor += specular(r.dir) * pow(0.85, bounce);
+    gl_FragColor *= shadow;
 
+
+    // gl_FragColor = vec4(rand3D(), 0.0);
     // gl_FragColor *= 1.5;
     // gl_FragColor *= 0.5;
 
