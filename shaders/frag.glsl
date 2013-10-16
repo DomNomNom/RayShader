@@ -38,6 +38,8 @@ int HIT_TYPE_WATER    = 4;
 float PI = acos(0.0)*2.0; // 3.14...
 vec2 leftFront = normalize(vec2(1.0, 1.0));
 
+bool debug = false;
+
 // ====== ret ======
 
 // re-tracing information
@@ -100,33 +102,36 @@ float diffuse (vec4 normal) {  return clamp(dot(normal, vertex_light_position), 
 float diffuse2(vec4 normal) {  return   abs(dot(normal, vertex_light_position)          ); } // a two-sided version.
 
 bool floatZero(float f) {
-    return !(f<0.0 && f>0.0);
+    return (-0.0001 < f && f < 0.0001);
 }
 
+// takes only the x and y component
+vec3 twoD(vec4 v) { return vec3(v.xy, 0.0); }
+vec3 twoD(vec3 v) { return vec3(v.xy, 0.0); }
 
 // ====== trace functions ======
 
 ret trace_water(vec4 eye, vec4 dir) {
-    float closestT = 0.0;
     ret r = noHit();
-    vec3 v = vec3(dir.xy, 0.0);
+    vec3 v = twoD(dir);
+    vec3 p = twoD(eye);
     for (int i=0; i<numWater-1; ++i) {
         // ray segment intersection from: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-        vec3 p0 = vec3(water[i  ].xy, 0.0);
-        vec3 p1 = vec3(water[i+1].xy, 0.0);
-        vec3 s = p0-p1;
+        vec3 q  = twoD(water[i  ]);
+        vec3 q1 = twoD(water[i+1]);
+        vec3 s = q1 - q;
 
-        float c = cross(v, s);
+        float c = cross(v, s).z;
         if (floatZero(c)) continue; // parallel case
-        float t = cross(p0 - eye.xyz, s) / c;
-        float u = cross(p0 - eye.xyz, v) / c;
+        float t = cross(q - p, s).z / c;
+        float u = cross(q - p, v).z / c;
 
         if (u < 0.0 || u > 1.0) continue; // not in segment range
 
-        if (t < closestT || closestT==0.0) {
+        if (t > 0.0001 && t < r.t || r.t==0.0) {
             vec4 intersect = eye + t*dir;
             if (intersect.z < -1.0 || intersect.z > 1.0) continue; // z bounds
-            closestT = t;
+            r.t = t;
             r.eye = intersect;
             r.hit = HIT_TYPE_WATER;
             r.normal = vec4(normalize(
@@ -250,16 +255,15 @@ ret trace_spheres(vec4 eye, vec4 dir) {
 ret trace(vec4 eye, vec4 dir) {
     dir = normalize(dir);
 
-    ret r = min_ret(
+    ret r = trace_water(eye, dir);/*min_ret(
         trace_spheres(eye, dir),
         trace_triangles(eye, dir)
     );
     r = min_ret(
         r,
         trace_water(eye, dir)
-    );
+    );*/
 
-    r = trace_water(eye, dir);
 
 
 
@@ -294,6 +298,8 @@ void main() {
 
         // if (r.thing != 3)
         r.dir = reflect(r.dir, r.normal);
+        // gl_FragColor = vec4(r.normal.xzy, 1.0);
+        // return;
 
         if (r.hit > HIT_TYPE_NO_HIT) {
             // shadow
@@ -309,10 +315,10 @@ void main() {
                 // diffuse += vec4(0.0, 0.3, 0.0, 0.0); // ambient
                 gl_FragColor += diffuse * pow(0.4, bounce+1.0);
             }
+
         }
 
     }
-
 
     gl_FragColor += specular(r.dir) * pow(0.85, bounce);
     gl_FragColor *= shadow;
