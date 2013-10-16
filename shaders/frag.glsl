@@ -2,6 +2,8 @@
 varying vec4 vertex_light_position;
 varying vec4 v;
 
+// uniforms
+
 uniform vec2 mouse;
 uniform float time;
 uniform int numTriangles;
@@ -14,20 +16,28 @@ uniform samplerCube skybox;
 uniform bool skybox_enabled;
 uniform mat4 cameraTransform;
 
+uniform vec3 water        [40];
+uniform vec3 water_normals[40];
+uniform float turbulent_min;
+uniform float turbulent_max;
 
 // ====== local variables ======
+
+int shadowSamples;
 
 // enum hitType
 int HIT_TYPE_NO_HIT   = 0;
 int HIT_TYPE_SPHERE   = 1;
 int HIT_TYPE_TRIANGLE = 2;
+int HIT_TYPE_INITIAL  = 3;
 
 // re-tracing information
 struct ret {
-    vec4 colour;
+    vec4 normal;
     vec4 eye;
     vec4 dir;
-    bool hit;
+    int hit;
+    int thing;
 };
 
 // float root2 = sqrt(2.0);
@@ -65,6 +75,7 @@ vec4 specular(vec4 dir) {
 float diffuse (vec4 normal) {  return clamp(dot(normal, vertex_light_position), 0.0, 1.0); }
 float diffuse2(vec4 normal) {  return   abs(dot(normal, vertex_light_position)          ); } // a two-sided version.
 
+// the returned r.dir is NOT reflected
 ret trace(vec4 eye, vec4 dir) {
     dir = normalize(dir);
 
@@ -168,8 +179,8 @@ ret trace(vec4 eye, vec4 dir) {
                 closestOffset = offset;
                 closestType = HIT_TYPE_SPHERE;
                 closestIntersect = intersect;
-                // closestNormal = ; // we can easily compute it later
                 closestThing = i;
+                closestNormal = normalize(closestIntersect - pos); // we can easily compute it later
             }
             // float offset = dot(dir, eye-intersect);
             // if (offset< 0.0 && (bestBall < 0 || offset > bestOffset)) { // TODO; invert direction
@@ -182,34 +193,39 @@ ret trace(vec4 eye, vec4 dir) {
 
 
     // render the closest object
+    return ret(
+        closestNormal,
+        closestIntersect,
+        dir, // return the previous style
+        closestType,
+        closestThing
+    );
 
-    if (closestType == HIT_TYPE_SPHERE) {
-        closestNormal = normalize(closestIntersect - ball_pos[closestThing]);
-        return ret(
-            vec4(1.0, 0.0, 0.0, 0.0) * diffuse(closestNormal),
-
-            closestIntersect,
-            reflect(dir, closestNormal),
-            true
-        );
-    }
-    else if (closestType == HIT_TYPE_TRIANGLE) {
-        return ret(
-            vec4(1.0, 0.0, 0.0, 0.0) * diffuse2(closestNormal),
-
-            closestIntersect,
-            reflect(dir, closestNormal),
-            true
-        );
-    }
-    else { // no hit
-        return ret(
-            vec4(0.0, 0.0, 0.0, 0.0), //specular(dir),
-            vec4(0.0, 0.0, 0.0, 0.0),
-            dir,
-            false
-        );
-    }
+    // if (closestType == HIT_TYPE_SPHERE) {
+    //     closestNormal =
+    //     return ret(
+    //         vec4(1.0, 0.0, 0.0, 0.0) * diffuse(closestNormal),
+    //         closestIntersect,
+    //         reflect(dir, closestNormal),
+    //         true
+    //     );
+    // }
+    // else if (closestType == HIT_TYPE_TRIANGLE) {
+    //     return ret(
+    //         vec4(1.0, 0.0, 0.0, 0.0) * diffuse2(closestNormal),
+    //         closestIntersect,
+    //         reflect(dir, closestNormal),
+    //         true
+    //     );
+    // }
+    // else { // no hit
+    //     return ret(
+    //         vec4(0.0, 0.0, 0.0, 0.0), //specular(dir),
+    //         vec4(0.0, 0.0, 0.0, 0.0),
+    //         dir,
+    //         false
+    //     );
+    // }
 
 }
 
@@ -224,23 +240,28 @@ void main() {
         vec4(0.0),
         cameraTransform * vec4(0.0, 0.0, 0.0, 1.0),
         cameraTransform * normalize(vec4(v.xy, 1.5, 0.0)), // decrease the y component for more FoV
-        true
+        HIT_TYPE_INITIAL,
+        0
     );
+
 
     float shadow = 1.0;
     float bounce;
-    for (bounce=0.0; r.hit && bounce<7.0; bounce+=1.0) {
+    for (bounce=0.0; r.hit>HIT_TYPE_NO_HIT && bounce<7.0; bounce+=1.0) {
         r = trace(r.eye, r.dir);
 
-        if (r.hit) {
-            if (trace(r.eye, vertex_light_position + 0.05*rand3D()).hit) { // shadow
+        // if (r.thing != 3)
+        r.dir = reflect(r.dir, r.normal);
+
+        if (r.hit > HIT_TYPE_NO_HIT) {
+            if (trace(r.eye, vertex_light_position + 0.05*rand3D()).hit > HIT_TYPE_NO_HIT) { // shadow
                 shadow = 0.75;
             }
             if (!skybox_enabled) {
-                vec4 diffuse = r.colour; // diffuse
+                vec4 diffuse = vec4(1.0, 0.0, 0.0, 0.0) * diffuse(r.normal); // diffuse
                 // diffuse += vec4(0.0, 0.3, 0.0, 0.0); // ambient
                 gl_FragColor += diffuse * pow(0.4, bounce+1.0);
-            } // diffuse
+            }
         }
 
     }
