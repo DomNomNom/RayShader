@@ -268,7 +268,7 @@ void display() {
         glLoadIdentity();
 
         //shift the camera back
-        glTranslatef(0.0f, 0.0f, -zoom * 3.0f);
+        glTranslatef(0.0f, 0.0f, -zoom * 1.5f);
 
         //rotate the camera position
         glm::vec2 rot(mouse_x * 2.0f * -360.0f, mouse_y * 2.0f * 360.0f);
