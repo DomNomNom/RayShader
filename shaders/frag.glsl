@@ -311,7 +311,9 @@ void main() {
         // return;
 
         if (r.hit == HIT_TYPE_WATER) {
-            r.dir = refract(r.dir, -r.normal, 0.9);
+            // this refraction is a bit of a hack
+            r.normal.y *= r.dir.y;
+            r.dir = refract(r.dir, r.normal, 0.93);
             gl_FragColor += vec4(0.01, 0.04, 0.09, 0.0); // water is blu-ish right?
         }
         else {
@@ -320,7 +322,7 @@ void main() {
 
 
         if (debug) {
-            gl_FragColor = vec4((r.normal.xyz + vec3(1.0, 1.0, 1.0))*0.5, 1.0);
+            gl_FragColor = vec4((r.normal.xyz + vec3(1.0, 1.0, 1.0))*0.5, 0.0);
             return;
         }
 
