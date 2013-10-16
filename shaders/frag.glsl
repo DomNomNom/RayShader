@@ -24,7 +24,7 @@ uniform float turbulent_max;
 
 // ====== local variables ======
 
-int shadowSamples = 4;
+int shadowSamples = 0;
 float shadowPerSample = pow(0.50, 1.0/float(shadowSamples));
 
 // enum hitType
@@ -142,10 +142,10 @@ ret trace_water(vec4 eye, vec4 dir) {
                     water_normals[i+1],
                     smoothstep(0.0, 1.0, u)
                 )
-                + 0.1*vec3( // add a fake ripple
+                + 0.1*vec3( // add a fake ripples
                     cos((intersect.x+intersect.z*0.3)*13.0 + time*-3.0),
                     0.0,
-                    cos((intersect.x)*10.0 + time*4.0) + sin(intersect.z*10.0 +time*1.0)
+                    cos((intersect.x)*7.0 + time*4.0) + sin(intersect.z*10.0 +time*1.0)
                 )
             ), 0.0);
         }
@@ -205,7 +205,6 @@ ret trace_triangles(vec4 eye, vec4 dir) {
 
         //     vec4 intersect = eye - t * dir; // the intersect point
 
-
         //     vec3 P = vec3(intersect);
         //     vec3 edge0 = v1 - v0;
         //     vec3 edge1 = v2 - v1;
@@ -214,7 +213,6 @@ ret trace_triangles(vec4 eye, vec4 dir) {
         //     vec3 C1 = P - v1;
         //     vec3 C2 = P - v2;
         //     vec3 N = vec3(normal);
-
 
         //     if (
         //         dot(N, cross(edge0, C0)) > 0.0 &&
@@ -263,18 +261,20 @@ ret trace_spheres(vec4 eye, vec4 dir) {
     return r;
 }
 
+bool hitWater = false;
+
 // the returned r.dir is NOT reflected
 ret trace(vec4 eye, vec4 dir) {
     dir = normalize(dir);
 
-    ret r = trace_water(eye, dir);/*min_ret(
+    ret r = min_ret(
         trace_spheres(eye, dir),
         trace_triangles(eye, dir)
     );
-    r = min_ret(
-        r,
-        trace_water(eye, dir)
-    );*/
+    // r = min_ret(
+    //     r,
+    //     trace_water(eye, dir)
+    // );
 
 
 

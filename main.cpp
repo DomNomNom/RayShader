@@ -182,7 +182,8 @@ void display() {
 
 
     // how the camera is transformed
-    cameraTransform = mat4(zoom);
+    cameraTransform = mat4(1.0);
+    cameraTransform = scale(cameraTransform, vec3(zoom, zoom, zoom));
     cameraTransform = rotate(cameraTransform, mouse_x * 2.0f *-360.0f, vec3(0.0f, 1.0f, 0.0f));
     cameraTransform = rotate(cameraTransform, mouse_y * -180.0f+90.0f, vec3(1.0f, 0.0f, 0.0f));
     cameraTransform = translate(cameraTransform, vec3(0.0, 0.0, -2.0));
@@ -201,7 +202,7 @@ void display() {
 
     if (renderMode == SHADE_TRACE) {
 
-        g_Liquid.render(liquid::RAYTRACE);
+        // g_Liquid.render(liquid::RAYTRACE);
 
         // pass texture samplers
         glActiveTexture(GL_TEXTURE0);
@@ -274,7 +275,7 @@ void display() {
         glm::vec2 rot(mouse_x * 2.0f * -360.0f, mouse_y * 2.0f * 360.0f);
         glRotatef(rot.x,  0.0f, 1.0f, 0.0f);
         glRotatef(rot.y,
-            cos(rot.x * DEGREES_TO_RADIANS), 0, 
+            cos(rot.x * DEGREES_TO_RADIANS), 0,
             sin(rot.x * DEGREES_TO_RADIANS));
 
         //apply lighting
@@ -386,29 +387,18 @@ void mouseMoveHander(int x, int y){
     //glutPostRedisplay();
 }
 
-void mouseButtonHandler(int button, int state, int x, int y) {
+void mouseButtonHandler(int button, int, int, int) {
 
     switch(button) {
-
-        case 3: {
-
-            zoom -= 0.03f;
-            break;
-        }
-        case 4: {
-
-            zoom += 0.03f;
-            break;
-        }
+        case 3:   zoom -= 0.03f;    break;
+        case 4:   zoom += 0.03f;    break;
     }
 
     //clamp
     if (zoom < 0.5f) {
-
         zoom = 0.5f;
     }
     else if (zoom > 1.7f) {
-
         zoom = 1.7f;
     }
 }
