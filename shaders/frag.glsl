@@ -103,6 +103,9 @@ bool floatZero(float f) {
     return !(f<0.0 && f>0.0);
 }
 
+
+// ====== trace functions ======
+
 ret trace_water(vec4 eye, vec4 dir) {
     float closestT = 0.0;
     ret r = noHit();
@@ -247,11 +250,17 @@ ret trace_spheres(vec4 eye, vec4 dir) {
 ret trace(vec4 eye, vec4 dir) {
     dir = normalize(dir);
 
-    ret r = noHit();
-    r = min_ret(
+    ret r = min_ret(
         trace_spheres(eye, dir),
         trace_triangles(eye, dir)
     );
+    r = min_ret(
+        r,
+        trace_water(eye, dir)
+    );
+
+    r = trace_water(eye, dir);
+
 
 
     r.dir = dir;
