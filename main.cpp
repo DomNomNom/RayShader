@@ -41,14 +41,14 @@ float modelScale = 0.7;
 
 
 
-
+// scene specifications
 scene currentScene = SCENE_WATER;
 std::vector<vec4> vertecies;
 std::vector<int> triangles;
 std::vector<vec4> ball_pos;
 std::vector<float> ball_radius;
 GLuint skybox;
-bool skybox_enabled = false;
+bool skybox_enabled = true;
 
 
 
