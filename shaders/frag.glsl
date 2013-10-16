@@ -134,11 +134,18 @@ ret trace_water(vec4 eye, vec4 dir) {
             r.t = t;
             r.eye = intersect;
             r.hit = HIT_TYPE_WATER;
+            debug = true;
             r.normal = vec4(normalize(
-                mix(water_normals[i], water_normals[i+1], u)
+                // water_normals[i]
+                mix( // interpolate the normals smoothly
+                    water_normals[i],
+                    water_normals[i+1],
+                    smoothstep(0.0, 1.0, u)
+                )
             ), 0.0);
         }
     }
+
 
     return r;
 }
@@ -292,14 +299,14 @@ void main() {
     float bounce;
     for (bounce=0.0; r.hit>HIT_TYPE_NO_HIT && bounce<7.0; bounce+=1.0) {
         r = trace(r.eye, r.dir);
-        // gl_FragColor = (r.dir + vec4(1.0, 1.0, 1.0, 0.0)) *0.5; //vec4(r.t*0.1);
-        // gl_FragColor.a = 1.0;
         // return;
 
         // if (r.thing != 3)
-        r.dir = reflect(r.dir, r.normal);
-        // gl_FragColor = vec4(r.normal.xzy, 1.0);
-        // return;
+        if (debug) {
+            r.dir = reflect(r.dir, r.normal);
+            gl_FragColor = vec4((r.normal.xyz + vec3(1.0, 1.0, 1.0))*0.5, 1.0);
+            return;
+        }
 
         if (r.hit > HIT_TYPE_NO_HIT) {
             // shadow
