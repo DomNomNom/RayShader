@@ -13,13 +13,36 @@ typedef std::vector<LiquidCell*> LiquidRow;
 typedef std::vector<LiquidRow> LiquidSlice;
 typedef std::vector<LiquidSlice> LiquidGrid;
 typedef std::vector<glm::vec3> FaceList;
+typedef std::vector<glm::vec3> t_HeightMap;
+typedef std::vector<glm::vec3> t_NormalMap;
+
+namespace liquid {
+
+    //ENUMERATOR
+    //the render modes for the liquid
+    enum e_RenderMode {
+
+        //don't render
+        NONE = 0,
+        //render as particle grid
+        GRID,
+        //pass as height map to be ray traced
+        RAYTRACE
+    };
+} //liquid
 
 class Liquid {
 public:
 
     //CONSTRUCTOR
-    /*!Creates a new liquid simulation*/
-    Liquid();
+    /*!Creates a new liquid simulation
+    @heightMap a pointer to the height map of the turbulent liquid
+    @normalMap a pointer to the normals of the height map
+    @turbulentMin a pointer to the bottom of the turbulent liquid
+    @turbulentMax a pointer to the top of the turbulent water
+    @waterBottom a pointer to the bottom of the water*/
+    Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
+        float* turbulentMin, float* turbulentMax, float* waterBottom);
 
     //DESTRUCTOR
     /*!Destroys this liquid*/
@@ -30,8 +53,8 @@ public:
     void update();
 
     /*!Renders the liquid
-    @polygonWrap is true to render in polygon wrapping mode*/
-    void render(bool polygonWrap);
+    @renderMode the rendering mode of the water*/
+    void render(liquid::e_RenderMode renderMode);
 
     /*!Cleans up the liquid*/
     void cleanUp();
@@ -45,7 +68,7 @@ private:
     //the dimensions of the grid
     const glm::vec3 GRID_DIM;
     //the size of a grid cell
-    const float CELL_SIZE;
+    float m_CellSize;
 
     //the grid of cells
     LiquidGrid mGrid;
@@ -55,6 +78,12 @@ private:
     //the direction of gravity
     static glm::vec3 sGravityDirection;
 
+    //ray tracing values
+    t_HeightMap* m_HeightMap;
+    t_NormalMap* m_NormalMap;
+    float* m_TurbulentMin;
+    float* m_TurbulentMax;
+
     //the wave (Testing)
     float mWave;
     bool mWaveUp;
@@ -63,37 +92,14 @@ private:
     DISALLOW_COPY_AND_ASSIGN(Liquid);
 
     //PRIVATE MEMBER FUNCTIONS
-    /*!Renders the liquid with polygon wrapping*/
-    void renderPolygonWrap();
-
-    /*!computes the lower (non turbulent) half of the liquid's polygons
-    @top the highest point of the lower half
-    @return the list of faces of the polygons*/
-    FaceList* computeNonTurbulent(unsigned top) const;
-
-    /*!Computes the upper (turbulent) half of the liquid's polygons
-    @top the highest point of the upper half
-    @return the list of faces of the polygons*/
-    FaceList* computeTurbulent(unsigned top) const;
-
-    /*!Recursivly computes the turbulent polygons
-    @topLeft the top left indices of the square
-    @bottomRight the bottom right indices of the square
-    @return the list of faces of the square*/
-    FaceList* computeTurbulentRec(const glm::vec3& topLeft,
-        const glm::vec3& bottomRight) const;
-
-    /*!Renders a list of polygons as liquid*/
-    void renderPolygons(FaceList* faces);
-
     /*!Renders the liquid as particles*/
     void renderParticles();
 
-    /*!Renders the liquid grid*/
-    void renderGrid();
-
     /*!Renders the border of the liquid*/
     void renderBorder();
+
+    /*!Calculates and sets the ray tracing height map*/
+    void computeHeightMap();
 };
 
 #endif
