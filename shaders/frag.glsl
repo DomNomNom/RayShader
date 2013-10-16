@@ -134,7 +134,7 @@ ret trace_water(vec4 eye, vec4 dir) {
             r.t = t;
             r.eye = intersect;
             r.hit = HIT_TYPE_WATER;
-            debug = true;
+            // debug = true;
             r.normal = vec4(normalize(
                 // water_normals[i]
                 mix( // interpolate the normals smoothly
@@ -142,6 +142,7 @@ ret trace_water(vec4 eye, vec4 dir) {
                     water_normals[i+1],
                     smoothstep(0.0, 1.0, u)
                 )
+                // + 0.1*vec3(0.0, 0.0, sin(intersect.z * 10.0))
             ), 0.0);
         }
     }
@@ -302,8 +303,8 @@ void main() {
         // return;
 
         // if (r.thing != 3)
+        r.dir = reflect(r.dir, r.normal);
         if (debug) {
-            r.dir = reflect(r.dir, r.normal);
             gl_FragColor = vec4((r.normal.xyz + vec3(1.0, 1.0, 1.0))*0.5, 1.0);
             return;
         }
