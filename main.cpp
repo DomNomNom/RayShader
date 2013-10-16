@@ -29,9 +29,14 @@ int window_wd = 600;
 int window_ht = 600;
 float aspectRatio = window_wd / window_ht;
 
+int framecount = 0;
+float seconds = 0;
+float seconds_floor = 0; // floor(seconds)
+
+char window_title[200];
+
 float mouse_x = 0.5;
 float mouse_y = 0.5;
-float seconds = 0;
 
 bool shadeTrace = true;
 
@@ -111,6 +116,16 @@ float openglCoords(float val) {
 
 void display() {
     seconds += time_dt();
+    framecount += 1;
+    if (floor(seconds) > seconds_floor) { // we are in a new second
+        seconds_floor = floor(seconds);
+        // window_title[0] = '\0'; // clear string
+        // strcat(window_title, "RayShader  ");
+        sprintf(window_title, "RayShader  %2dfps", framecount);
+        glutSetWindowTitle(window_title);
+        framecount = 0;
+    }
+
     // printf("time %f\n", seconds);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -217,7 +232,7 @@ void display() {
     // undoView();
 
     glutSwapBuffers();
-
+    glutPostRedisplay();
 }
 
 
