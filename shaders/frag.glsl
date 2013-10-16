@@ -78,6 +78,7 @@ ret trace(vec4 eye, vec4 dir) {
 
     for (int i=0; i<numTriangles*3; i+=3) {
 
+        // Möller Trumbore method
         vec3 edge2 = vertecies[triangles[i+1]].xyz - vertecies[triangles[i  ]].xyz;
         vec3 edge1 = vertecies[triangles[i+2]].xyz - vertecies[triangles[i  ]].xyz;
         vec3 pvec = cross(dir.xyz, edge2);
@@ -108,6 +109,9 @@ ret trace(vec4 eye, vec4 dir) {
         }
 
 
+
+
+        // // baycentric coordinate method
         // vec3 v0 = vec3(vertecies[triangles[i  ]]);
         // vec3 v1 = vec3(vertecies[triangles[i+1]]);
         // vec3 v2 = vec3(vertecies[triangles[i+2]]);
@@ -115,21 +119,12 @@ ret trace(vec4 eye, vec4 dir) {
 
         // float normalDot = dot(dir, normal);
         // if (normalDot != 0.0) {
-        //     // calculate be bestTriangleOffset
-        //     // vec4 u =
         //     vec4 p = eye - vertecies[triangles[i]];
         //     float t = dot(p, normal) / normalDot;
 
         //     vec4 intersect = eye - t * dir; // the intersect point
 
 
-        //     // float len_ab = length(triangles[i+1]);
-        //     // float len_ac = length(triangles[i+2]);
-        //     // float v = dot(intersect-triangles[i], normalize(triangles[i+1])) / len_ab; // (len_ab * len_ab);
-        //     // float u = dot(intersect-triangles[i], normalize(triangles[i+2])) / len_ab; // (len_ac * len_ab);
-        //     // float uv = u + v;
-
-        //     // baycentric coordinate method
         //     vec3 P = vec3(intersect);
         //     vec3 edge0 = v1 - v0;
         //     vec3 edge1 = v2 - v1;
@@ -144,9 +139,6 @@ ret trace(vec4 eye, vec4 dir) {
         //         dot(N, cross(edge0, C0)) > 0.0 &&
         //         dot(N, cross(edge1, C1)) > 0.0 &&
         //         dot(N, cross(edge2, C2)) > 0.0
-        //         // 0.0 <= u  && u  <= 1.0 &&
-        //         // 0.0 <= v  && v  <= 1.0 &&
-        //         // 0.0 <= uv && uv <= 1.0
         //     ) {
         //         float offset = dot(dir, intersect-eye);
         //         if (offset > 0.001 && (offset < closestOffset || closestType==HIT_TYPE_NO_HIT)) {
