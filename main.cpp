@@ -40,7 +40,6 @@ float mouse_y = 0.5;
 float zoom = 1.0f;
 
 enum RenderMode {
-
     SHADE_TRACE = 0,
     LIQUID_ONLY,
     OPENGL
@@ -147,8 +146,6 @@ void display() {
     framecount += 1;
     if (floor(seconds) > seconds_floor) { // we are in a new second
         seconds_floor = floor(seconds);
-        // window_title[0] = '\0'; // clear string
-        // strcat(window_title, "RayShader  ");
         sprintf(window_title, "RayShader  %2dfps", framecount);
         glutSetWindowTitle(window_title);
         framecount = 0;
@@ -162,47 +159,20 @@ void display() {
     // //clear colour
     // glClearColor(0.0, 0.0, 0.0, 1.0);
 
-    // printf("%f\n", modelScale);
-    // ball_pos[0].x = openglCoords(mouse_x);
-    // ball_pos[0].y = -openglCoords(mouse_y);
-    // printf("%f %f\n", balls[0], balls[1]);
-
-    // float minY = 0.0f;
-    // for (unsigned int i=0; i<ball_radius.size(); ++i) {
-    //     // ball_radius[i] = mouse_y;
-    //     ball_radius[i] = 0.15;
-
-    //     // set the floor to be the lowest possible point
-    //     minY = min(minY, ball_pos[i].y - ball_radius[i]);
-    // }
-    // for (int i=1*3; i<3*3; i+=3) {
-    //     triangles[i].y = minY;
-    // }
-    // triangles[8].y = 40 * openglCoords( mouse_y);
-
 
     // how the camera is transformed
     cameraTransform = mat4(1.0);
-    cameraTransform = scale(cameraTransform, vec3(zoom, zoom, zoom));
-    cameraTransform = rotate(cameraTransform, mouse_x * 2.0f *-360.0f, vec3(0.0f, 1.0f, 0.0f));
-    cameraTransform = rotate(cameraTransform, mouse_y * -180.0f+90.0f, vec3(1.0f, 0.0f, 0.0f));
+    cameraTransform = scale(    cameraTransform, vec3(zoom, zoom, zoom));
+    cameraTransform = rotate(   cameraTransform, mouse_x * 2.0f *-360.0f, vec3(0.0f, 1.0f, 0.0f));
+    cameraTransform = rotate(   cameraTransform, mouse_y * -180.0f+90.0f, vec3(1.0f, 0.0f, 0.0f));
     cameraTransform = translate(cameraTransform, vec3(0.0, 0.0, -2.0));
 
 
-    // modelScale = mouse_x+0.1f;
-    // modelScale = 0.7f;
-    // mat4 transform = mat4(1.0f);
-    // transform = scale(transform, vec3(modelScale, modelScale, modelScale));
-    // transform = rotate(transform, mouse_x * 500.0f, vec3(0.0f, 1.0f, 0.0f));
-    // transform = rotate(transform, seconds * 50.0f, vec3(0.0f, 1.0f, 0.0f));
-    // applyView(transform);
-    // printVec(triangles+1);
 
-    // triangles[0].x = openglCoords(mouse_x);
 
     if (renderMode == SHADE_TRACE) {
 
-        // g_Liquid.render(liquid::RAYTRACE);
+        g_Liquid.render(liquid::RAYTRACE);
 
         // pass texture samplers
         glActiveTexture(GL_TEXTURE0);

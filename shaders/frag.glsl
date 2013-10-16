@@ -267,14 +267,18 @@ bool hitWater = false;
 ret trace(vec4 eye, vec4 dir) {
     dir = normalize(dir);
 
-    ret r = min_ret(
-        trace_spheres(eye, dir),
-        trace_triangles(eye, dir)
-    );
+    ret r = noHit();
     // r = min_ret(
-    //     r,
-    //     trace_water(eye, dir)
+    //     trace_spheres(eye, dir),
+    //     trace_triangles(eye, dir)
     // );
+    if (!hitWater) {
+        r = min_ret(
+            r,
+            trace_water(eye, dir)
+        );
+        hitWater = (r.hit == HIT_TYPE_WATER);
+    }
 
 
 
@@ -306,8 +310,15 @@ void main() {
         r = trace(r.eye, r.dir);
         // return;
 
-        // if (r.thing != 3)
-        r.dir = reflect(r.dir, r.normal);
+        if (r.hit == HIT_TYPE_WATER) {
+            r.dir = refract(r.dir, -r.normal, 0.9);
+            gl_FragColor += vec4(0.01, 0.04, 0.09, 0.0); // water is blu-ish right?
+        }
+        else {
+            r.dir = reflect(r.dir, r.normal);
+        }
+
+
         if (debug) {
             gl_FragColor = vec4((r.normal.xyz + vec3(1.0, 1.0, 1.0))*0.5, 1.0);
             return;
