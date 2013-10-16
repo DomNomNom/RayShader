@@ -8,6 +8,7 @@ uniform vec2 mouse;
 uniform float time;
 uniform int numTriangles;
 uniform int numBalls;
+uniform int numWater;
 uniform vec4 vertecies[40];
 uniform int triangles[40];
 uniform vec4 ball_pos[20];     // positions
@@ -23,7 +24,8 @@ uniform float turbulent_max;
 
 // ====== local variables ======
 
-int shadowSamples;
+int shadowSamples = 4;
+float shadowPerSample = pow(0.50, 1.0/float(shadowSamples));
 
 // enum hitType
 int HIT_TYPE_NO_HIT   = 0;
@@ -52,7 +54,7 @@ vec2 leftFront = normalize(vec2(1.0, 1.0));
 vec2 randomV = v.xy * sin(time);
 float rand() {
     float random = fract(sin(dot(randomV.xy, vec2(12.9898, 78.233)))* 43758.5453)  *2.0 - 1.0;
-    randomV = vec2(random, randomV.y);
+    randomV = vec2(random, randomV.y+1.0);
     return random;
 }
 
@@ -74,6 +76,14 @@ vec4 specular(vec4 dir) {
 
 float diffuse (vec4 normal) {  return clamp(dot(normal, vertex_light_position), 0.0, 1.0); }
 float diffuse2(vec4 normal) {  return   abs(dot(normal, vertex_light_position)          ); } // a two-sided version.
+
+// ret trace_water(vec4 eye, vec4 dir) {
+//     closestT = 0;
+//     ret r = ret(vec4(0.0, 0.0, dir, HIT_TYPE_NO_HIT, 0));
+//     for (int i=0; i<numWater-1; ++i) {
+//         vec
+//     }
+// }
 
 // the returned r.dir is NOT reflected
 ret trace(vec4 eye, vec4 dir) {
@@ -254,11 +264,16 @@ void main() {
         r.dir = reflect(r.dir, r.normal);
 
         if (r.hit > HIT_TYPE_NO_HIT) {
-            if (trace(r.eye, vertex_light_position + 0.05*rand3D()).hit > HIT_TYPE_NO_HIT) { // shadow
-                shadow = 0.75;
+            // shadow
+            for (int i=0; i<shadowSamples; ++i) {
+                if (trace(r.eye, vertex_light_position + 0.09*rand3D()).hit > HIT_TYPE_NO_HIT) {
+                    shadow *= shadowPerSample;
+                }
             }
+
+            // diffuse only if we don't have a skybox
             if (!skybox_enabled) {
-                vec4 diffuse = vec4(1.0, 0.0, 0.0, 0.0) * diffuse(r.normal); // diffuse
+                vec4 diffuse = vec4(1.0, 0.0, 0.0, 0.0) * diffuse(r.normal);
                 // diffuse += vec4(0.0, 0.3, 0.0, 0.0); // ambient
                 gl_FragColor += diffuse * pow(0.4, bounce+1.0);
             }

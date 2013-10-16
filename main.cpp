@@ -185,10 +185,13 @@ void display() {
         glUniform1i( glGetUniformLocation(shader.id(), "numBalls"),    ball_pos.size());
         glUniform4fv(glGetUniformLocation(shader.id(), "ball_pos"),    ball_pos.size(), value_ptr(ball_pos[0]) );
         glUniform1fv(glGetUniformLocation(shader.id(), "ball_radius"), ball_pos.size(), &ball_radius[0]);
+
+        glUniform1i( glGetUniformLocation(shader.id(), "numWater"     ), water.size());
         glUniform3fv(glGetUniformLocation(shader.id(), "water"        ), water.size(), value_ptr(water        [0]));
         glUniform3fv(glGetUniformLocation(shader.id(), "water_normals"), water.size(), value_ptr(water_normals[0]));
         glUniform1f( glGetUniformLocation(shader.id(), "turbulent_min"), turbulent_min);
         glUniform1f( glGetUniformLocation(shader.id(), "turbulent_max"), turbulent_max);
+
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
         glUniform1i( glGetUniformLocation(shader.id(), "skybox_enabled"), skybox_enabled); //Texture unit 0
