@@ -34,23 +34,34 @@ int HIT_TYPE_TRIANGLE = 2;
 int HIT_TYPE_INITIAL  = 3;
 int HIT_TYPE_WATER    = 4;
 
-// re-tracing information
-struct ret {
-    vec4 normal;
-    vec4 eye;
-    vec4 dir;
-    int hit;
-    int thing;
-};
-
 // float root2 = sqrt(2.0);
 float PI = acos(0.0)*2.0; // 3.14...
 vec2 leftFront = normalize(vec2(1.0, 1.0));
 
 
+// re-tracing information
+struct ret {
+    vec4 normal;
+    vec4 eye;
+    vec4 dir;
+    float t; // intersect = eye + t*dir
+    int hit;   // what hitType it is
+    int thing; // the index of what we collided with
+};
+
 // ====== functions ======
 
-
+// returns a new ret saying that there was no hit
+ret noHit() {
+    return ret(
+        vec4(0.0),
+        vec4(0.0),
+        vec4(0.0),
+        9001.0, // something far away
+        HIT_TYPE_NO_HIT,
+        0
+    );
+}
 
 vec2 randomV = v.xy * sin(time);
 float rand() {
@@ -84,7 +95,7 @@ bool floatZero(float f) {
 
 ret trace_water(vec4 eye, vec4 dir) {
     float closestT = 0.0;
-    ret r = ret(vec4(0.0), vec4(0.0), dir, HIT_TYPE_NO_HIT, 0);
+    ret r = noHit();
     vec3 v = vec3(dir.xy, 0.0);
     for (int i=0; i<numWater-1; ++i) {
         // ray segment intersection from: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
@@ -99,9 +110,11 @@ ret trace_water(vec4 eye, vec4 dir) {
 
         if (u < 0.0 || u > 1.0) continue; // not in segment range
 
-        if (t < closestT || closestT==0.0) { // further away
+        if (t < closestT || closestT==0.0) {
+            vec4 intersect = eye + t*dir;
+            if (intersect.z < -1.0 || intersect.z > 1.0) continue; // z bounds
             closestT = t;
-            r.eye = eye + t*dir;
+            r.eye = intersect;
             r.hit = HIT_TYPE_WATER;
             r.normal = vec4(normalize(
                 mix(water_normals[i], water_normals[i+1], u)
@@ -121,12 +134,15 @@ void min_ret(ret a, ret b) {
 ret trace(vec4 eye, vec4 dir) {
     dir = normalize(dir);
 
-    int closestType = HIT_TYPE_NO_HIT;
-    float closestOffset = -1.0; // should be positive multiples of dir
-    int closestThing = 0; // index of a array of the type (either triangles or spheres)
+    ret r = noHit();
+    r.dir = dir;
 
-    vec4 closestIntersect = vec4(0.0);
-    vec4 closestNormal    = vec4(0.0);
+    // int closestType = HIT_TYPE_NO_HIT;
+    // float closestOffset = -1.0; // should be positive multiples of dir
+    // int closestThing = 0; // index of a array of the type (either triangles or spheres)
+
+    // vec4 closestIntersect = vec4(0.0);
+    // vec4 closestNormal    = vec4(0.0);
 
 
     for (int i=0; i<numTriangles*3; i+=3) {
@@ -148,15 +164,15 @@ ret trace(vec4 eye, vec4 dir) {
         isectData.y = dot(dir.xyz, qvec) * invDet;
         if (isectData.y < 0.0 || isectData.x + isectData.y > 1.0) continue;
 
-        float t = dot(edge2, qvec) * invDet;
-        vec4 intersect = eye + t * dir; // the intersect point
-        float offset = dot(dir, intersect-eye);
-        if (offset > 0.001 && (offset < closestOffset || closestType==HIT_TYPE_NO_HIT)) {
-            closestOffset = offset;
-            closestType = HIT_TYPE_TRIANGLE;
-            closestIntersect = intersect;
-            closestNormal = vec4(normalize(cross(edge1, edge2)), 0.0);
-            closestThing = i;
+        float tt = dot(edge2, qvec) * invDet;
+        vec4 intersect = eye + tt * dir; // the intersect point
+        float t = dot(dir, intersect-eye);
+        if (t > 0.001 && (t < r.t || r.hit==HIT_TYPE_NO_HIT)) {
+            r.t = t;
+            r.hit = HIT_TYPE_TRIANGLE;
+            r.eye = intersect;
+            r.normal = vec4(normalize(cross(edge1, edge2)), 0.0);
+            r.thing = i;
         }
         else { // no hit
         }
@@ -207,6 +223,7 @@ ret trace(vec4 eye, vec4 dir) {
         // }
     }
 
+
     // find the best ball
     for (int i=0; i<numBalls; ++i) {
         vec4 pos = ball_pos[i];
@@ -216,32 +233,27 @@ ret trace(vec4 eye, vec4 dir) {
         float minDist = length(projection);
         if (minDist <= radius) {
             vec4 intersect = (pos+projection) - sqrt((radius*radius)-(minDist*minDist)) * dir;
-            float offset = dot(dir, intersect-eye);
-            if (offset > 0.001 && (offset < closestOffset || closestType==HIT_TYPE_NO_HIT)) {
-                closestOffset = offset;
-                closestType = HIT_TYPE_SPHERE;
-                closestIntersect = intersect;
-                closestThing = i;
-                closestNormal = normalize(closestIntersect - pos); // we can easily compute it later
+            float t = dot(dir, intersect-eye);
+            if (t > 0.001 && (t < r.t || r.hit==HIT_TYPE_NO_HIT)) {
+                r.t = t;
+                r.hit = HIT_TYPE_SPHERE;
+                r.eye = intersect;
+                r.thing = i;
+                r.normal = normalize(intersect - pos); // we can easily compute it later
             }
-            // float offset = dot(dir, eye-intersect);
-            // if (offset< 0.0 && (bestBall < 0 || offset > bestOffset)) { // TODO; invert direction
-            //     bestBall = i;
-            //     bestOffset = offset;
-            //     bestintersect = intersect;
-            // }
         }
     }
 
 
     // render the closest object
-    return ret(
-        closestNormal,
-        closestIntersect,
-        dir, // return the previous style
-        closestType,
-        closestThing
-    );
+    return r;
+    // return ret(
+    //     closestNormal,
+    //     closestIntersect,
+    //     dir, // return the previous style
+    //     closestType,
+    //     closestThing
+    // );
 
     // if (closestType == HIT_TYPE_SPHERE) {
     //     closestNormal =
@@ -282,6 +294,7 @@ void main() {
         vec4(0.0),
         cameraTransform * vec4(0.0, 0.0, 0.0, 1.0),
         cameraTransform * normalize(vec4(v.xy, 1.5, 0.0)), // decrease the y component for more FoV
+        0.0,
         HIT_TYPE_INITIAL,
         0
     );
@@ -291,6 +304,9 @@ void main() {
     float bounce;
     for (bounce=0.0; r.hit>HIT_TYPE_NO_HIT && bounce<7.0; bounce+=1.0) {
         r = trace(r.eye, r.dir);
+        // gl_FragColor = (r.dir + vec4(1.0, 1.0, 1.0, 0.0)) *0.5; //vec4(r.t*0.1);
+        // gl_FragColor.a = 1.0;
+        // return;
 
         // if (r.thing != 3)
         r.dir = reflect(r.dir, r.normal);
