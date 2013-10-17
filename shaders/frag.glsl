@@ -9,22 +9,27 @@ uniform float time;
 uniform int numTriangles;
 uniform int numBalls;
 uniform int numWater;
-uniform vec4 vertecies[40];
-uniform int triangles[40];
+uniform vec4 vertecies[100];
+uniform int triangles[100];
 uniform vec4 ball_pos[20];     // positions
 uniform float ball_radius[20]; // radii
 uniform samplerCube skybox;
 uniform bool skybox_enabled;
 uniform mat4 cameraTransform;
 
-uniform vec3 water        [40];
-uniform vec3 water_normals[40];
+uniform vec3 water        [80];
+uniform vec3 water_normals[80];
 uniform float turbulent_min;
 uniform float turbulent_max;
+uniform bool water_enabled;
+uniform bool model_enabled;
+uniform bool refract_enabled;
+uniform int shadowSamples;
 
 // ====== local variables ======
 
-int shadowSamples = 0;
+int refractThing = 1;
+
 float shadowPerSample = pow(0.50, 1.0/float(shadowSamples));
 
 // enum hitType
@@ -78,7 +83,7 @@ ret min_ret(ret a, ret b) {
 vec2 randomV = v.xy * sin(time);
 float rand() {
     float random = fract(sin(dot(randomV.xy, vec2(12.9898, 78.233)))* 43758.5453)  *2.0 - 1.0;
-    randomV = vec2(random, randomV.y+1.0);
+    randomV = vec2(random, randomV.y*0.6364+randomV.x*0.2412+1.3);
     return random;
 }
 
@@ -178,15 +183,15 @@ ret trace_water(vec4 eye, vec4 dir) {
             r.normal = vec4(normalize(
                 // water_normals[i]
                 mix( // interpolate the normals smoothly
-                    water_normals[i],
+                    water_normals[i  ],
                     water_normals[i+1],
                     smoothstep(0.0, 1.0, u)
                 )
-                + 0.1*vec3( // add a fake ripples
-                    cos((intersect.x+intersect.z*0.3)*13.0 + time*-3.0),
-                    0.0,
-                    cos((intersect.x)*7.0 + time*4.0) + sin(intersect.z*10.0 +time*1.0)
-                )
+                // + 0.1*vec3( // add a fake ripples
+                //     cos((intersect.x+intersect.z*0.3)*13.0 + time*-3.0),
+                //     0.0,
+                //     cos((intersect.x)*7.0 + time*4.0) + sin(intersect.z*10.0 +time*1.0)
+                // )
             ), 0.0);
         }
     }
@@ -288,12 +293,17 @@ ret trace_spheres(vec4 eye, vec4 dir) {
         if (minDist <= radius) {
             vec4 intersect = (pos+projection) - sqrt((radius*radius)-(minDist*minDist)) * dir;
             float t = dot(dir, intersect-eye);
+            vec4 orig = intersect;
+            if (refract_enabled && t<0.001 && i==refractThing) {
+                intersect = (pos+projection) + sqrt((radius*radius)-(minDist*minDist)) * dir;
+                t = dot(dir, intersect-eye);
+            }
             if (t > 0.001 && (t < r.t || r.hit==HIT_TYPE_NO_HIT)) {
                 r.t = t;
                 r.hit = HIT_TYPE_SPHERE;
                 r.eye = intersect;
                 r.thing = i;
-                r.normal = normalize(intersect - pos); // we can easily compute it later
+                r.normal = normalize(orig - pos);
             }
         }
     }
@@ -308,11 +318,14 @@ ret trace(vec4 eye, vec4 dir) {
     dir = normalize(dir);
 
     ret r = noHit();
-    // r = min_ret(
-    //     trace_spheres(eye, dir),
-    //     trace_triangles(eye, dir)
-    // );
-    if (!hitWater) {
+    if (model_enabled){
+        r = min_ret(
+            trace_spheres(eye, dir),
+            trace_triangles(eye, dir)
+        );
+    }
+
+    if (water_enabled && !hitWater) {
         r = min_ret(
             r,
             trace_water(eye, dir)
@@ -355,16 +368,21 @@ void main() {
             r.normal.y *= r.dir.y;
             r.dir = refract(r.dir, r.normal, 0.93);
             gl_FragColor += vec4(0.01, 0.04, 0.09, 0.0); // water is blu-ish right?
+            if (debug) {
+                gl_FragColor = vec4((r.normal.xyz + vec3(1.0, 1.0, 1.0))*0.5, 1.0);
+                return;
+            }
+        }
+        else if(refract_enabled && r.hit == HIT_TYPE_SPHERE && r.thing==refractThing) {
+            r.dir = refract(r.dir, r.normal, 0.93);
+            // gl_FragColor = vec4(vec3(1.0), 1.0);
+            // return;
         }
         else {
             r.dir = reflect(r.dir, r.normal);
         }
 
 
-        if (debug) {
-            gl_FragColor = vec4((r.normal.xyz + vec3(1.0, 1.0, 1.0))*0.5, 0.0);
-            return;
-        }
 
         if (r.hit > HIT_TYPE_NO_HIT) {
             // shadow

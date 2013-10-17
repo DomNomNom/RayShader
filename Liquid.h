@@ -1,18 +1,15 @@
-#ifndef RAYSHADER_LIQUID_LIQUID_H_
-#   define RAYSHADER_LIQUID_LIQUID_H_
+#ifndef RAYSHADER_LIQUID_H_
+#   define RAYSHADER_LIQUID_H_
 
-#include <stdlib.h>
+#include <GL/glut.h>
+#include <vector>
 
-class LiquidCell;
-
-#include "LiquidCell.h"
-#include "util.h"
+#include "RipplePoint.h"
 
 //TYPEDEF
-typedef std::vector<LiquidCell*> LiquidRow;
-typedef std::vector<LiquidRow> LiquidSlice;
-typedef std::vector<LiquidSlice> LiquidGrid;
-typedef std::vector<glm::vec3> FaceList;
+typedef std::vector<float> t_HeightRow;
+typedef std::vector<t_HeightRow> t_HeightMap2;
+typedef std::vector<RipplePoint*> RippleList;
 typedef std::vector<glm::vec3> t_HeightMap;
 typedef std::vector<glm::vec3> t_NormalMap;
 
@@ -42,7 +39,8 @@ public:
     @turbulentMax a pointer to the top of the turbulent water
     @waterBottom a pointer to the bottom of the water*/
     Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
-        float* turbulentMin, float* turbulentMax, float* waterBottom);
+        float* turbulentMin, float* turbulentMax, float* waterBottom,
+        float seconds);
 
     //DESTRUCTOR
     /*!Destroys this liquid*/
@@ -50,33 +48,28 @@ public:
 
     //PUBLIC MEMBER FUNCTIONS
     /*!Updates the liquid*/
-    void update();
+    void update(float seconds);
 
     /*!Renders the liquid
     @renderMode the rendering mode of the water*/
     void render(liquid::e_RenderMode renderMode);
 
-    /*!Cleans up the liquid*/
-    void cleanUp();
-
-    /*!@return the vector of gravity*/
-    static glm::vec3 getGravity();
+    /*!Adds a ripple to the the liquid*/
+    void addRipple(RipplePoint* ripple);
 
 private:
 
     //VARIABLES
-    //the dimensions of the grid
-    const glm::vec3 GRID_DIM;
+    //the dimensions of the grid (in cell size)
+    const glm::vec2 GRID_DIM;
     //the size of a grid cell
     float m_CellSize;
 
-    //the grid of cells
-    LiquidGrid mGrid;
+    //the height map of the water
+    t_HeightMap2 m_HeightMap2;
 
-    //the strength of gravity
-    static float sGravityStrength;
-    //the direction of gravity
-    static glm::vec3 sGravityDirection;
+    //the list of active ripple points
+    RippleList m_Ripples;
 
     //ray tracing values
     t_HeightMap* m_HeightMap;
@@ -84,9 +77,8 @@ private:
     float* m_TurbulentMin;
     float* m_TurbulentMax;
 
-    //the wave (Testing)
-    float mWave;
-    bool mWaveUp;
+    //time
+    float m_LastTime;
 
     //MACROS
     DISALLOW_COPY_AND_ASSIGN(Liquid);

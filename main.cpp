@@ -2,6 +2,7 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <GL/glut.h>
 #include <vector>
 
@@ -38,6 +39,7 @@ char window_title[200];
 float mouse_x = 0.5;
 float mouse_y = 0.5;
 float zoom = 1.0f;
+int shadowSamples = 0;
 
 enum RenderMode {
     SHADE_TRACE = 0,
@@ -45,7 +47,7 @@ enum RenderMode {
     OPENGL
 };
 
-RenderMode renderMode = SHADE_TRACE;
+RenderMode renderMode = LIQUID_ONLY;
 
 float modelScale = 0.7;
 
@@ -60,14 +62,16 @@ std::vector<float> ball_radius;
 GLuint skybox;
 bool skybox_enabled = true;
 
-
+bool zPressed = false;
 
 // modified by water simulation
 std::vector<vec3> water;
 std::vector<vec3> water_normals;
 float turbulent_min, turbulent_max;
 float water_bottom;
-
+bool water_enabled = false;
+bool model_enabled = true;
+bool refract_enabled = true;
 
 // lights
 float light_direction[] = {1.0f, 0.0f, 0.0f};
@@ -85,7 +89,8 @@ Liquid g_Liquid(
     &water_normals,
     &turbulent_min,
     &turbulent_max,
-    &water_bottom
+    &water_bottom,
+    seconds
 );
 
 mat4 cameraTransform = mat4(1.0f);
@@ -202,11 +207,15 @@ void display() {
         glUniform3fv(glGetUniformLocation(shader.id(), "water_normals"), water.size(), value_ptr(water_normals[0]));
         glUniform1f( glGetUniformLocation(shader.id(), "turbulent_min"), turbulent_min);
         glUniform1f( glGetUniformLocation(shader.id(), "turbulent_max"), turbulent_max);
+        glUniform1i( glGetUniformLocation(shader.id(), "water_enabled"), water_enabled);
+        glUniform1i( glGetUniformLocation(shader.id(), "model_enabled"), model_enabled);
+        glUniform1i( glGetUniformLocation(shader.id(), "refract_enabled"), refract_enabled);
 
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
-        glUniform1i( glGetUniformLocation(shader.id(), "skybox_enabled"), skybox_enabled); //Texture unit 0
-        glUniform1f( glGetUniformLocation(shader.id(), "time"), seconds); //Texture unit 0
+        glUniform1i( glGetUniformLocation(shader.id(), "skybox_enabled"), skybox_enabled);
+        glUniform1i( glGetUniformLocation(shader.id(), "shadowSamples"), shadowSamples);
+        glUniform1f( glGetUniformLocation(shader.id(), "time"), seconds);
         glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, value_ptr(cameraTransform));
 
         float tv = 10.0;
@@ -306,7 +315,7 @@ void display() {
 
 void idle() {
 
-    g_Liquid.update();
+    g_Liquid.update(seconds);
 }
 
 void initShader() {
@@ -338,14 +347,47 @@ void keyHander(unsigned char key, int, int) {
         case '1': currentScene = SCENE_BEACH;      reloadScene();   break;
         case '2': currentScene = SCENE_SURFACE;    reloadScene();   break;
         case '3': currentScene = SCENE_WATER;      reloadScene();   break;
+        case '4': currentScene = SCENE_OBJ;        reloadScene();   break;
         case 'a': renderMode = OPENGL;                              break;
         case 's': renderMode = SHADE_TRACE;                         break;
         case 'd': renderMode = LIQUID_ONLY;                         break;
         case 'l': skybox_enabled = !skybox_enabled;                 break;
+        case ']': shadowSamples += 1;                               break;
+        case '[': shadowSamples -= 1;                               break;
+        case 'p': shadowSamples  = 0;                               break;
+        case 'w': water_enabled = !water_enabled;                   break;
+        case 'e': model_enabled = !model_enabled;                   break;
+        case 'r': refract_enabled = !refract_enabled;               break;
     }
-    glutPostRedisplay();
+
+    if (key == 'z' && !zPressed) {
+
+        glm::vec2 rPos(
+            ((rand() % 200) / 100.0f) - 1.0f,
+            ((rand() % 200) / 100.0f) - 1.0f);
+
+        if (renderMode == SHADE_TRACE) {
+
+            rPos.y = 0.0f;
+        }
+
+        //float amplitude = 0.05f * ((rand() % 100) ;
+
+        g_Liquid.addRipple(new RipplePoint(rPos,
+            0.02f, -4.0f, 20.0f, 0.5f));
+        zPressed = true;
+    }
+
+    //glutPostRedisplay();
 }
 
+void keyUp(unsigned char key, int, int) {
+
+    if (key == 'z') {
+
+        zPressed = false;
+    }
+}
 
 void reshapeHandler(int, int ht) {
     glViewport(0, 0, ht/aspectRatio, ht);
@@ -357,7 +399,9 @@ void mouseMoveHander(int x, int y){
     //glutPostRedisplay();
 }
 
-void mouseButtonHandler(int button, int, int, int) {
+void mouseButtonHandler(int button, int dir, int, int) {
+
+    
 
     switch(button) {
         case 3:   zoom -= 0.03f;    break;
@@ -385,6 +429,7 @@ int main(int argc, char** argv) {
     glutIdleFunc(idle);
     glutReshapeFunc(reshapeHandler);
     glutKeyboardFunc(keyHander);
+    glutKeyboardUpFunc(keyUp);
     glutMotionFunc(mouseMoveHander);
     glutPassiveMotionFunc(mouseMoveHander);
     glutMouseFunc(mouseButtonHandler);
@@ -416,6 +461,8 @@ int main(int argc, char** argv) {
     skybox = png_cubemap_load("resources/beach/");
     initShader();
     setupLighting();
+
+    srand(time(0));
 
     glutMainLoop();
 
