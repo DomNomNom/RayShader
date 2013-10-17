@@ -63,14 +63,14 @@ enum RenderMode {
     OPENGL
 };
 
-RenderMode renderMode = LIQUID_ONLY;
+RenderMode renderMode = SHADE_TRACE;
 
 float modelScale = 0.7;
 
 
 
 // scene specifications
-scene currentScene = SCENE_WATER;
+scene currentScene = SCENE_PORTAL;
 std::vector<vec4> vertecies;
 std::vector<int> triangles;
 std::vector<vec4> ball_pos;
@@ -88,6 +88,7 @@ float turbulent_min, turbulent_max;
 float water_bottom;
 bool water_enabled = false;
 bool model_enabled = true;
+bool portal_enabled = false;
 bool refract_enabled = true;
 
 // lights
@@ -296,6 +297,7 @@ void display() {
         glUniform1f( glGetUniformLocation(shader.id(), "turbulent_max"), turbulent_max);
         glUniform1i( glGetUniformLocation(shader.id(), "water_enabled"), water_enabled);
         glUniform1i( glGetUniformLocation(shader.id(), "model_enabled"), model_enabled);
+        glUniform1i( glGetUniformLocation(shader.id(), "portal_enabled"), portal_enabled);
         glUniform1i( glGetUniformLocation(shader.id(), "refract_enabled"), refract_enabled);
 
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
@@ -410,6 +412,7 @@ void initShader() {
 }
 
 void reloadScene() {
+    portal_enabled = (currentScene == SCENE_PORTAL);
     loadScene(
         currentScene,
         vertecies,
@@ -432,6 +435,7 @@ void keyHander(unsigned char key, int, int) {
         case '2': currentScene = SCENE_SURFACE;    reloadScene();   break;
         case '3': currentScene = SCENE_WATER;      reloadScene();   break;
         case '4': currentScene = SCENE_OBJ;        reloadScene();   break;
+        case '5': currentScene = SCENE_PORTAL;     reloadScene();   break;
         case 'a': renderMode = OPENGL;                              break;
         case 's': renderMode = SHADE_TRACE;                         break;
         case 'd': renderMode = LIQUID_ONLY;                         break;
@@ -441,6 +445,7 @@ void keyHander(unsigned char key, int, int) {
         case 'p': shadowSamples  = 0;                               break;
         case 'w': water_enabled = !water_enabled;                   break;
         case 'e': model_enabled = !model_enabled;                   break;
+        case 'o': portal_enabled = !portal_enabled;                 break;
         case 'r': refract_enabled = !refract_enabled;               break;
         case 'v': vortex = !vortex; g_Liquid.setVortex(vortex);     break;
         case 'f': g_Liquid.fill();                                  break;

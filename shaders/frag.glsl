@@ -23,6 +23,7 @@ uniform float turbulent_min;
 uniform float turbulent_max;
 uniform bool water_enabled;
 uniform bool model_enabled;
+uniform bool portal_enabled;
 uniform bool refract_enabled;
 uniform int shadowSamples;
 
@@ -38,12 +39,17 @@ int HIT_TYPE_SPHERE   = 1;
 int HIT_TYPE_TRIANGLE = 2;
 int HIT_TYPE_INITIAL  = 3;
 int HIT_TYPE_WATER    = 4;
+int HIT_TYPE_PORTAL   = 5;
 
 // float root2 = sqrt(2.0);
-float PI = acos(0.0)*2.0; // 3.14...
+float PI  = acos(0.0)*2.0; // 3.14...
+float PI2 = acos(0.0);
 vec2 leftFront = normalize(vec2(1.0, 1.0));
 
 bool debug = false;
+
+bool portalled = false;
+vec2 portalUV = vec2(0.0);
 
 // ====== ret ======
 
@@ -200,13 +206,17 @@ ret trace_water(vec4 eye, vec4 dir) {
     return r;
 }
 
+bool xor(bool a, bool b) {
+    return (a && !b) || (b && !a);
+}
+
 ret trace_triangles(vec4 eye, vec4 dir) {
     ret r = noHit();
     for (int i=0; i<numTriangles*3; i+=3) {
 
         // Möller Trumbore method
-        vec3 edge2 = vertecies[triangles[i+1]].xyz - vertecies[triangles[i  ]].xyz;
-        vec3 edge1 = vertecies[triangles[i+2]].xyz - vertecies[triangles[i  ]].xyz;
+        vec3 edge1 = vertecies[triangles[i+1]].xyz - vertecies[triangles[i  ]].xyz;
+        vec3 edge2 = vertecies[triangles[i+2]].xyz - vertecies[triangles[i  ]].xyz;
         vec3 pvec = cross(dir.xyz, edge2);
         float det = dot(edge1, pvec);
         if (det == 0.0) continue;
@@ -230,6 +240,18 @@ ret trace_triangles(vec4 eye, vec4 dir) {
             r.eye = intersect;
             r.normal = vec4(normalize(cross(edge1, edge2)), 0.0);
             r.thing = i;
+
+            if (portal_enabled) {
+                // if (xor(
+                //     mod(20.0*(isectData.x), 2.0) < 1.0,
+                //     mod(20.0*(isectData.y), 2.0) < 1.0
+                // )) {
+                // if (mod(20.0*(isectData.y), 2.0) < 1.0) {
+                //     debug = true;
+                // }
+                portalUV = isectData;
+                r.hit = HIT_TYPE_PORTAL;
+            }
         }
         else { // no hit
         }
@@ -341,7 +363,14 @@ ret trace(vec4 eye, vec4 dir) {
 }
 
 
-
+// rotate about y axis
+vec4 rotate(vec4 v, float theta) {
+    // 2D rotation
+    float v_x = v.x; // temp variable
+    v.x = cos(theta) * v.x - sin(theta) * v.z;
+    v.z = sin(theta) * v_x + cos(theta) * v.z;
+    return v;
+}
 
 // ====== main ======
 
@@ -363,15 +392,35 @@ void main() {
         r = trace(r.eye, r.dir);
         // return;
 
+        if (debug) {
+            gl_FragColor = vec4(1.0);
+            return;
+        }
+
+
         if (r.hit == HIT_TYPE_WATER) {
             // this refraction is a bit of a hack
             r.normal.y *= r.dir.y;
             r.dir = refract(r.dir, r.normal, 0.93);
             gl_FragColor += vec4(0.01, 0.04, 0.09, 0.0); // water is blu-ish right?
-            if (debug) {
-                gl_FragColor = vec4((r.normal.xyz + vec3(1.0, 1.0, 1.0))*0.5, 1.0);
-                return;
-            }
+
+        }
+        else if (r.hit == HIT_TYPE_PORTAL) {
+
+            r.dir = rotate(r.dir, (r.thing==0)? -PI2 : PI2);
+
+            // calculate r.eye
+            int o = 1 - r.thing; // other portal
+            vec4 edge1 = vertecies[triangles[o+1]] - vertecies[triangles[o  ]];
+            vec4 edge2 = vertecies[triangles[o+2]] - vertecies[triangles[o  ]];
+            r.eye = vertecies[triangles[o]];
+            r.eye += portalUV.y * edge1;
+            r.eye += portalUV.x * edge2;
+            gl_FragColor += vec4(0.2, 0.1, 0.0, 0.0);
+
+            // gl_FragColor = vec4((r.eye.xyz + vec3(1.0, 1.0, 1.0))*0.5, 1.0);
+            // return;
+
         }
         else if(refract_enabled && r.hit == HIT_TYPE_SPHERE && r.thing==refractThing) {
             r.dir = refract(r.dir, r.normal, 0.93);
