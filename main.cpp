@@ -63,14 +63,14 @@ enum RenderMode {
     OPENGL
 };
 
-RenderMode renderMode = SHADE_TRACE;
+RenderMode renderMode = LIQUID_ONLY;
 
 float modelScale = 0.7;
 
 
 
 // scene specifications
-scene currentScene = SCENE_PORTAL;
+scene currentScene = SCENE_SURFACE;
 std::vector<vec4> vertecies;
 std::vector<int> triangles;
 std::vector<vec4> ball_pos;
@@ -86,7 +86,7 @@ std::vector<vec3> water;
 std::vector<vec3> water_normals;
 float turbulent_min, turbulent_max;
 float water_bottom;
-bool water_enabled = false;
+bool water_enabled = true;
 bool model_enabled = true;
 bool portal_enabled = false;
 bool refract_enabled = true;
@@ -341,7 +341,7 @@ void display() {
         // glLoadMatrixf(value_ptr(inverse(cameraTransform)));
         // //shift the camera back
         glTranslatef(0.0f, 0.0f, -2.0f);
-        glRotatef(-camRotX, 1.0f, 0.0f, 0.0f);
+        glRotatef(camRotX, 1.0f, 0.0f, 0.0f);
         glRotatef(-camRotY, 0.0f, 1.0f, 0.0f);
         glScalef(1.0/zoom, 1.0/zoom, 1.0/zoom);
 
