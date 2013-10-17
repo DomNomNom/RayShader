@@ -87,7 +87,7 @@ void Liquid::update(float seconds) {
             //slow motion on the water
             m_HeightMap2[y][x] +=
                 (cos((cellPos.x) * 7.0f + seconds * 4.0f) +
-                sin(cellPos.y * 10.0f + seconds * 1.0f)) * 0.001f;
+                sin(cellPos.y * 10.0f + seconds * 1.0f)) * 0.002f;
 
             //check if below and touch the sphere
             if (seconds - m_SphereRippleTimer > 0.1f &&
