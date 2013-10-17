@@ -38,6 +38,7 @@ char window_title[200];
 float mouse_x = 0.5;
 float mouse_y = 0.5;
 float zoom = 1.0f;
+int shadowSamples = 0;
 
 enum RenderMode {
     SHADE_TRACE = 0,
@@ -67,7 +68,8 @@ std::vector<vec3> water;
 std::vector<vec3> water_normals;
 float turbulent_min, turbulent_max;
 float water_bottom;
-
+bool water_enabled = true;
+bool model_enabled = true;
 
 // lights
 float light_direction[] = {1.0f, 0.0f, 0.0f};
@@ -202,11 +204,14 @@ void display() {
         glUniform3fv(glGetUniformLocation(shader.id(), "water_normals"), water.size(), value_ptr(water_normals[0]));
         glUniform1f( glGetUniformLocation(shader.id(), "turbulent_min"), turbulent_min);
         glUniform1f( glGetUniformLocation(shader.id(), "turbulent_max"), turbulent_max);
+        glUniform1i( glGetUniformLocation(shader.id(), "water_enabled"), water_enabled);
+        glUniform1i( glGetUniformLocation(shader.id(), "model_enabled"), model_enabled);
 
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
-        glUniform1i( glGetUniformLocation(shader.id(), "skybox_enabled"), skybox_enabled); //Texture unit 0
-        glUniform1f( glGetUniformLocation(shader.id(), "time"), seconds); //Texture unit 0
+        glUniform1i( glGetUniformLocation(shader.id(), "skybox_enabled"), skybox_enabled);
+        glUniform1i( glGetUniformLocation(shader.id(), "shadowSamples"), shadowSamples);
+        glUniform1f( glGetUniformLocation(shader.id(), "time"), seconds);
         glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, value_ptr(cameraTransform));
 
         float tv = 10.0;
@@ -338,10 +343,16 @@ void keyHander(unsigned char key, int, int) {
         case '1': currentScene = SCENE_BEACH;      reloadScene();   break;
         case '2': currentScene = SCENE_SURFACE;    reloadScene();   break;
         case '3': currentScene = SCENE_WATER;      reloadScene();   break;
+        case '4': currentScene = SCENE_OBJ;        reloadScene();   break;
         case 'a': renderMode = OPENGL;                              break;
         case 's': renderMode = SHADE_TRACE;                         break;
         case 'd': renderMode = LIQUID_ONLY;                         break;
         case 'l': skybox_enabled = !skybox_enabled;                 break;
+        case ']': shadowSamples += 1;                               break;
+        case '[': shadowSamples -= 1;                               break;
+        case 'p': shadowSamples  = 0;                               break;
+        case 'w': water_enabled = !water_enabled;                   break;
+        case 'e': model_enabled = !model_enabled;                   break;
     }
     glutPostRedisplay();
 }
