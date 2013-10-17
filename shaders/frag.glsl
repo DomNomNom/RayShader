@@ -116,8 +116,48 @@ vec3 twoD(vec3 v) { return vec3(v.xy, 0.0); }
 
 // ====== trace functions ======
 
+// returns whether the given ray intersects the given Axis Aligned Bounding Box
+// lb (left bottom) is the corner of AABB with minimal coordinates, rt (right top) is the maximal corner
+bool hitAABB(vec4 eye, vec4 dir, vec3 lb, vec3 rt) {
+    // r.dir is unit direction vector of ray
+    // dirfrac.x = 1.0f / r.dir.x;
+    // dirfrac.y = 1.0f / r.dir.y;
+    // dirfrac.z = 1.0f / r.dir.z;
+    dir = vec4(1.0) / dir; // don't use a new vector
+
+    // r.org is origin of ray
+    float t1 = (lb.x - eye.x)*dir.x;
+    float t2 = (rt.x - eye.x)*dir.x;
+    float t3 = (lb.y - eye.y)*dir.y;
+    float t4 = (rt.y - eye.y)*dir.y;
+    float t5 = (lb.z - eye.z)*dir.z;
+    float t6 = (rt.z - eye.z)*dir.z;
+
+    float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+    float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+    // if tmax < 0, ray (line) is intersecting AABB, but whole AABB is behing us
+    // if tmin > tmax, ray doesn't intersect AABB
+    if (tmax < 0.0 || tmin > tmax) {
+        return false;
+    }
+
+    return true;
+}
+
 ret trace_water(vec4 eye, vec4 dir) {
     ret r = noHit();
+
+    // AABB optimization
+    if (! hitAABB(
+        eye,
+        dir,
+        vec3(water[0         ].x, turbulent_min, -1.0),
+        vec3(water[numWater-1].x, turbulent_max,  1.0)
+    )) {
+        return r;
+    }
+
     vec3 v = twoD(dir);
     vec3 p = twoD(eye);
     for (int i=0; i<numWater-1; ++i) {
@@ -147,11 +187,11 @@ ret trace_water(vec4 eye, vec4 dir) {
                     water_normals[i+1],
                     smoothstep(0.0, 1.0, u)
                 )
-                // + 0.1*vec3( // add a fake ripples
-                //     cos((intersect.x+intersect.z*0.3)*13.0 + time*-3.0),
-                //     0.0,
-                //     cos((intersect.x)*7.0 + time*4.0) + sin(intersect.z*10.0 +time*1.0)
-                // )
+                + 0.1*vec3( // add a fake ripples
+                    cos((intersect.x+intersect.z*0.3)*13.0 + time*-3.0),
+                    0.0,
+                    cos((intersect.x)*7.0 + time*4.0) + sin(intersect.z*10.0 + time*1.0)
+                )
             ), 0.0);
         }
     }
