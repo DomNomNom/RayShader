@@ -68,8 +68,9 @@ std::vector<vec3> water;
 std::vector<vec3> water_normals;
 float turbulent_min, turbulent_max;
 float water_bottom;
-bool water_enabled = true;
+bool water_enabled = false;
 bool model_enabled = true;
+bool refract_enabled = true;
 
 // lights
 float light_direction[] = {1.0f, 0.0f, 0.0f};
@@ -206,6 +207,7 @@ void display() {
         glUniform1f( glGetUniformLocation(shader.id(), "turbulent_max"), turbulent_max);
         glUniform1i( glGetUniformLocation(shader.id(), "water_enabled"), water_enabled);
         glUniform1i( glGetUniformLocation(shader.id(), "model_enabled"), model_enabled);
+        glUniform1i( glGetUniformLocation(shader.id(), "refract_enabled"), refract_enabled);
 
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
@@ -353,6 +355,7 @@ void keyHander(unsigned char key, int, int) {
         case 'p': shadowSamples  = 0;                               break;
         case 'w': water_enabled = !water_enabled;                   break;
         case 'e': model_enabled = !model_enabled;                   break;
+        case 'r': refract_enabled = !refract_enabled;               break;
     }
     glutPostRedisplay();
 }

@@ -23,9 +23,12 @@ uniform float turbulent_min;
 uniform float turbulent_max;
 uniform bool water_enabled;
 uniform bool model_enabled;
+uniform bool refract_enabled;
 uniform int shadowSamples;
 
 // ====== local variables ======
+
+int refractThing = 1;
 
 float shadowPerSample = pow(0.50, 1.0/float(shadowSamples));
 
@@ -136,7 +139,7 @@ ret trace_water(vec4 eye, vec4 dir) {
             r.t = t;
             r.eye = intersect;
             r.hit = HIT_TYPE_WATER;
-            debug = true;
+            // debug = true;
             r.normal = vec4(normalize(
                 // water_normals[i]
                 mix( // interpolate the normals smoothly
@@ -250,12 +253,17 @@ ret trace_spheres(vec4 eye, vec4 dir) {
         if (minDist <= radius) {
             vec4 intersect = (pos+projection) - sqrt((radius*radius)-(minDist*minDist)) * dir;
             float t = dot(dir, intersect-eye);
+            vec4 orig = intersect;
+            if (refract_enabled && t<0.001 && i==refractThing) {
+                intersect = (pos+projection) + sqrt((radius*radius)-(minDist*minDist)) * dir;
+                t = dot(dir, intersect-eye);
+            }
             if (t > 0.001 && (t < r.t || r.hit==HIT_TYPE_NO_HIT)) {
                 r.t = t;
                 r.hit = HIT_TYPE_SPHERE;
                 r.eye = intersect;
                 r.thing = i;
-                r.normal = normalize(intersect - pos); // we can easily compute it later
+                r.normal = normalize(orig - pos);
             }
         }
     }
@@ -319,11 +327,16 @@ void main() {
             // this refraction is a bit of a hack
             r.normal.y *= r.dir.y;
             r.dir = refract(r.dir, r.normal, 0.93);
-            gl_FragColor += vec4(0.1, 0.04, 0.09, 0.0); // water is blu-ish right?
+            gl_FragColor += vec4(0.01, 0.04, 0.09, 0.0); // water is blu-ish right?
             if (debug) {
                 gl_FragColor = vec4((r.normal.xyz + vec3(1.0, 1.0, 1.0))*0.5, 1.0);
                 return;
             }
+        }
+        else if(refract_enabled && r.hit == HIT_TYPE_SPHERE && r.thing==refractThing) {
+            r.dir = refract(r.dir, r.normal, 0.93);
+            // gl_FragColor = vec4(vec3(1.0), 1.0);
+            // return;
         }
         else {
             r.dir = reflect(r.dir, r.normal);
