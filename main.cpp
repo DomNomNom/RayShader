@@ -305,7 +305,7 @@ void display() {
         glUniform1f( glGetUniformLocation(shader.id(), "time"), seconds);
         glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, value_ptr(cameraTransform));
 
-        float tv = 10.0;
+        float tv = 1.0;
         glColor3f(1,0,0);
         glBegin(GL_TRIANGLES);
             // two triangles that cover the screen
@@ -329,7 +329,9 @@ void display() {
 
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        gluPerspective(60.0f, window_wd / window_ht, 0.1f, 1000.0f);
+
+        gluPerspective(60.0f, ((float) window_wd) / ((float) window_ht),
+            0.1f, 1000.0f);
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
@@ -473,8 +475,14 @@ void keyUp(unsigned char key, int, int) {
     }
 }
 
-void reshapeHandler(int, int ht) {
-    glViewport(0, 0, ht/aspectRatio, ht);
+void reshapeHandler(int wd, int ht) {
+
+    winCentreX = wd / 2.0f;
+    winCentreY = ht / 2.0f;
+
+    float xPos = (wd - (ht/aspectRatio)) / 2.0f;
+
+    glViewport(xPos, 0, ht/aspectRatio, ht);
 }
 
 void mouseMoveHander(int x, int y){

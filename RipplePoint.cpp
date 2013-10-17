@@ -21,7 +21,9 @@ float RipplePoint::computeHeight(const glm::vec2& point) const {
 	float dis = glm::distance(m_Position, point) -
 		(m_Time * m_Speed);
 
-	return m_Amplitude * exp(m_Decay * (dis * dis)) *
+	float ampDecay = m_Amplitude * ((5.5 - m_Time) / 5.5f);
+
+	return ampDecay * exp(m_Decay * (dis * dis)) *
 		cos(m_Frequency * dis);
 }
 
