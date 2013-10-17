@@ -152,8 +152,8 @@ ret trace_water(vec4 eye, vec4 dir) {
     if ( hitAABB(
         eye,
         dir,
-        vec3(water[0         ].x, -1.0, -1.0),
-        vec3(water[numWater-1].x,  1.0,  1.0)
+        vec3(water[0         ].x, turbulent_min, -1.0),
+        vec3(water[numWater-1].x, turbulent_max,  1.0)
     )) {
         return r;
     }
