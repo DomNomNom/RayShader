@@ -1,17 +1,15 @@
-#ifndef RAYSHADER_LIQUID_LIQUID_H_
-#   define RAYSHADER_LIQUID_LIQUID_H_
+#ifndef RAYSHADER_LIQUID_H_
+#   define RAYSHADER_LIQUID_H_
 
 #include <GL/glut.h>
-#include "glm/glm.hpp"
-#include <iostream>
-#include <stdlib.h>
 #include <vector>
 
-#include "util.h"
+#include "RipplePoint.h"
 
 //TYPEDEF
 typedef std::vector<float> t_HeightRow;
 typedef std::vector<t_HeightRow> t_HeightMap2;
+typedef std::vector<RipplePoint*> RippleList;
 typedef std::vector<glm::vec3> t_HeightMap;
 typedef std::vector<glm::vec3> t_NormalMap;
 
@@ -41,7 +39,8 @@ public:
     @turbulentMax a pointer to the top of the turbulent water
     @waterBottom a pointer to the bottom of the water*/
     Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
-        float* turbulentMin, float* turbulentMax, float* waterBottom);
+        float* turbulentMin, float* turbulentMax, float* waterBottom,
+        float seconds);
 
     //DESTRUCTOR
     /*!Destroys this liquid*/
@@ -49,11 +48,14 @@ public:
 
     //PUBLIC MEMBER FUNCTIONS
     /*!Updates the liquid*/
-    void update();
+    void update(float seconds);
 
     /*!Renders the liquid
     @renderMode the rendering mode of the water*/
     void render(liquid::e_RenderMode renderMode);
+
+    /*!Adds a ripple to the the liquid*/
+    void addRipple(RipplePoint* ripple);
 
 private:
 
@@ -66,11 +68,17 @@ private:
     //the height map of the water
     t_HeightMap2 m_HeightMap2;
 
+    //the list of active ripple points
+    RippleList m_Ripples;
+
     //ray tracing values
     t_HeightMap* m_HeightMap;
     t_NormalMap* m_NormalMap;
     float* m_TurbulentMin;
     float* m_TurbulentMax;
+
+    //time
+    float m_LastTime;
 
     //MACROS
     DISALLOW_COPY_AND_ASSIGN(Liquid);

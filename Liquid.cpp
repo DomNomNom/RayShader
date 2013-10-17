@@ -2,14 +2,14 @@
 
 //CONSTRUCTOR
 Liquid::Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
-    float* turbulentMin, float* turbulentMax, float* waterBottom) :
-    GRID_DIM(40, 40),
+    float* turbulentMin, float* turbulentMax, float* waterBottom,
+    float seconds) :
+    GRID_DIM(80, 80),
     m_HeightMap(heightMap),
     m_NormalMap(normalMap),
     m_TurbulentMin(turbulentMin),
-    m_TurbulentMax(turbulentMax) {
-
-    srand(time(0));
+    m_TurbulentMax(turbulentMax),
+    m_LastTime(seconds) {
 
     //calculate the cell size
     m_CellSize = 2.0f / GRID_DIM.x;
@@ -21,27 +21,87 @@ Liquid::Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
 
         for (unsigned x = 0; x < GRID_DIM.x; ++x) {
 
-            m_HeightMap2[y].push_back((rand() % 100) / 200.0f);
+            m_HeightMap2[y].push_back(0.0f);
         }
     }
 
     //set the bottom of the water
     *waterBottom = -(GRID_DIM.x / 2.0f) * m_CellSize;
+
+    //create some ripples
+    m_Ripples.push_back(new RipplePoint(glm::vec2(0.0f, 0.0f),
+        0.035f, -4.0f, 20.0f, 0.5f));
 }
 
 //DESTRUCTOR
 Liquid::~Liquid() {
+
+    //clean up the ripple vector
+    for (unsigned i = 0; i < m_Ripples.size(); ++i) {
+
+        delete m_Ripples[i];
+    }
 }
 
 //PUBLIC MEMBER FUNCTIONS
-void Liquid::update() {
+void Liquid::update(float seconds) {
+
+    //check if we need to remove any ripples
+    for (RippleList::iterator it = m_Ripples.begin();
+        it != m_Ripples.end();) {
+
+        if ((*it)->shouldRemove()) {
+
+            m_Ripples.erase(it);
+        }
+        else {
+
+            ++it;
+        }
+    }
+
+    float x1 = -(GRID_DIM.x / 2.0f) * m_CellSize;
+    float z1 = -(GRID_DIM.y / 2.0f) * m_CellSize;
 
     //randomise the height map
     for (unsigned y = 0; y < GRID_DIM.y; ++y) {
         for (unsigned x = 0; x < GRID_DIM.x; ++x) {
 
-            m_HeightMap2[y][x] = (rand() % 100) / 200.0f;
+            //the 2d position in world space of the cell
+            glm::vec2 cellPos(
+                x1 + (x * m_CellSize),
+                z1 + (y * m_CellSize));
+
+            //reset the height
+            m_HeightMap2[y][x] = 0.0f;
+
+            //apply each ripple
+            for (unsigned i = 0; i < m_Ripples.size(); ++i) {
+
+                m_HeightMap2[y][x] +=
+                    m_Ripples[i]->computeHeight(cellPos);
+            }
+
+            //clamp the height
+            if (m_HeightMap2[y][x] < -(GRID_DIM.x / 2.0f) * m_CellSize) {
+
+                m_HeightMap2[y][x] = -(GRID_DIM.x / 2.0f) * m_CellSize;
+            }
+            if (m_HeightMap2[y][x] >  (GRID_DIM.x / 2.0f) * m_CellSize) {
+
+                m_HeightMap2[y][x] =  (GRID_DIM.x / 2.0f) * m_CellSize;
+            }
         }
+    }
+
+    //find delta time
+    float deltaTime = seconds - m_LastTime;
+    m_LastTime = seconds;
+
+    //update the ripples
+    for (unsigned i = 0; i < m_Ripples.size(); ++i) {
+
+        m_Ripples[i]->update(deltaTime);
     }
 }
 
@@ -69,6 +129,11 @@ void Liquid::render(liquid::e_RenderMode renderMode) {
     }
 }
 
+void Liquid::addRipple(RipplePoint* ripple) {
+
+    m_Ripples.push_back(ripple);
+}
+
 //PRIVATE MEMBER FUNCTIONS
 void Liquid::renderParticles() {
 
@@ -78,11 +143,18 @@ void Liquid::renderParticles() {
     float z1 = -(GRID_DIM.y / 2.0f) * m_CellSize;
     float halfCell = m_CellSize / 2.0f;
 
-    glColor4f(0.0f, 0.5f, 0.8f, 1.0f);
-
     //iterate over the grid and draw as particles
     for (unsigned y = 0; y < GRID_DIM.y; ++y) {
         for (unsigned x = 0; x < GRID_DIM.x; ++x) {
+
+            //random tint amounts
+            float tint   = 0.0f;
+            if ((x + y) % 2) {
+
+                tint = -0.3f;
+            }
+
+            glColor4f(0.0f, 0.5f + tint, 0.8f, 1.0f);
 
             //get the height of the particle
             float y2 = m_HeightMap2[y][x];
@@ -169,7 +241,7 @@ void Liquid::computeHeightMap() {
     //iterate over the middle row of the height map
     for (unsigned x = 0; x < GRID_DIM.x; ++x) {
 
-        float height = m_HeightMap2[middleIndex][x];
+        float height = m_HeightMap2[middleIndex][x] * 0.8f;
 
         float hx = x1 + (x * m_CellSize);
 

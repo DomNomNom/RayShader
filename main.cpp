@@ -2,6 +2,7 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <GL/glut.h>
 #include <vector>
 
@@ -61,7 +62,7 @@ std::vector<float> ball_radius;
 GLuint skybox;
 bool skybox_enabled = true;
 
-
+bool zPressed = false;
 
 // modified by water simulation
 std::vector<vec3> water;
@@ -88,7 +89,8 @@ Liquid g_Liquid(
     &water_normals,
     &turbulent_min,
     &turbulent_max,
-    &water_bottom
+    &water_bottom,
+    seconds
 );
 
 mat4 cameraTransform = mat4(1.0f);
@@ -313,7 +315,7 @@ void display() {
 
 void idle() {
 
-    g_Liquid.update();
+    g_Liquid.update(seconds);
 }
 
 void initShader() {
@@ -357,9 +359,35 @@ void keyHander(unsigned char key, int, int) {
         case 'e': model_enabled = !model_enabled;                   break;
         case 'r': refract_enabled = !refract_enabled;               break;
     }
-    glutPostRedisplay();
+
+    if (key == 'z' && !zPressed) {
+
+        glm::vec2 rPos(
+            ((rand() % 200) / 100.0f) - 1.0f,
+            ((rand() % 200) / 100.0f) - 1.0f);
+
+        if (renderMode == SHADE_TRACE) {
+
+            rPos.y = 0.0f;
+        }
+
+        //float amplitude = 0.05f * ((rand() % 100) ;
+
+        g_Liquid.addRipple(new RipplePoint(rPos,
+            0.02f, -4.0f, 20.0f, 0.5f));
+        zPressed = true;
+    }
+
+    //glutPostRedisplay();
 }
 
+void keyUp(unsigned char key, int, int) {
+
+    if (key == 'z') {
+
+        zPressed = false;
+    }
+}
 
 void reshapeHandler(int, int ht) {
     glViewport(0, 0, ht/aspectRatio, ht);
@@ -371,7 +399,9 @@ void mouseMoveHander(int x, int y){
     //glutPostRedisplay();
 }
 
-void mouseButtonHandler(int button, int, int, int) {
+void mouseButtonHandler(int button, int dir, int, int) {
+
+    
 
     switch(button) {
         case 3:   zoom -= 0.03f;    break;
@@ -399,6 +429,7 @@ int main(int argc, char** argv) {
     glutIdleFunc(idle);
     glutReshapeFunc(reshapeHandler);
     glutKeyboardFunc(keyHander);
+    glutKeyboardUpFunc(keyUp);
     glutMotionFunc(mouseMoveHander);
     glutPassiveMotionFunc(mouseMoveHander);
     glutMouseFunc(mouseButtonHandler);
@@ -430,6 +461,8 @@ int main(int argc, char** argv) {
     skybox = png_cubemap_load("resources/beach/");
     initShader();
     setupLighting();
+
+    srand(time(0));
 
     glutMainLoop();
 
