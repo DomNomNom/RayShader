@@ -5,17 +5,17 @@ Liquid::Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
     float* turbulentMin, float* turbulentMax, float* waterBottom,
     float seconds) :
     GRID_DIM(64, 64),
-    m_HeightMap(heightMap),
-    m_NormalMap(normalMap),
-    m_TurbulentMin(turbulentMin),
-    m_TurbulentMax(turbulentMax),
-    m_LastTime(seconds),
+    m_Level(0.0f),
+    m_VortexOn(false),
     m_SphereRad(0.15f),
     m_SphereRippleTimer(seconds),
     m_SphereMove(false),
     m_SphereSpeed(0.0f),
-    m_VortexOn(false),
-    m_Level(0.0f) {
+    m_HeightMap(heightMap),
+    m_NormalMap(normalMap),
+    m_TurbulentMin(turbulentMin),
+    m_TurbulentMax(turbulentMax),
+    m_LastTime(seconds) {
 
     //calculate the cell size
     m_CellSize = 2.0f / GRID_DIM.x;
