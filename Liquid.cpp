@@ -1,60 +1,32 @@
 #include "Liquid.h"
 
-//VARIABLES
-//the strength of gravity
-float Liquid::sGravityStrength = 1.0f;
-//the direction of gravity
-glm::vec3 Liquid::sGravityDirection(0.0f, -1.0f, 0.0f);
-
 //CONSTRUCTOR
 Liquid::Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
-        float* turbulentMin, float* turbulentMax, float* waterBottom) :
-    GRID_DIM(40, 40, 40),
+    float* turbulentMin, float* turbulentMax, float* waterBottom) :
+    GRID_DIM(40, 40),
     m_HeightMap(heightMap),
     m_NormalMap(normalMap),
     m_TurbulentMin(turbulentMin),
-    m_TurbulentMax(turbulentMax),
-    mWave(0.0f),
-    mWaveUp(true) {
+    m_TurbulentMax(turbulentMax) {
 
-    //seed the random number generator
     srand(time(0));
 
     //calculate the cell size
     m_CellSize = 2.0f / GRID_DIM.x;
 
-    //create the grid
-    for (unsigned z = 0; z < GRID_DIM.z; ++z) {
+    //set the level of the water to be at zero
+    for (unsigned y = 0; y < GRID_DIM.y; ++y) {
 
-        //create a new slice in the grid
-        mGrid.push_back(LiquidSlice());
+        m_HeightMap2.push_back(t_HeightRow());
 
-        for (unsigned y = 0; y < GRID_DIM.y; ++y) {
+        for (unsigned x = 0; x < GRID_DIM.x; ++x) {
 
-            //create a new row in the slice
-            mGrid[z].push_back(LiquidRow());
-
-            for (unsigned x = 0; x < GRID_DIM.x; ++x) {
-
-                LiquidCell* cell = new LiquidCell(glm::vec3(x, y, z), m_CellSize);
-
-                //add cells to the grid
-                if (y < GRID_DIM.y / 2.0f) {
-
-                    cell->init(false);
-                }
-                else {
-
-                    cell->init(true);
-                }
-
-                mGrid[z][y].push_back(cell);
-            }
+            m_HeightMap2[y].push_back((rand() % 100) / 200.0f);
         }
     }
 
     //set the bottom of the water
-    *waterBottom = -(GRID_DIM.y / 2.0f) * m_CellSize;
+    *waterBottom = -(GRID_DIM.x / 2.0f) * m_CellSize;
 }
 
 //DESTRUCTOR
@@ -64,64 +36,17 @@ Liquid::~Liquid() {
 //PUBLIC MEMBER FUNCTIONS
 void Liquid::update() {
 
-    //TESTING SIMULATE A WAVE
-    if (mWaveUp) {
+    //randomise the height map
+    for (unsigned y = 0; y < GRID_DIM.y; ++y) {
+        for (unsigned x = 0; x < GRID_DIM.x; ++x) {
 
-        mWave += 0.01f;
-
-        if (mWave >= 1.0f) {
-
-            mWaveUp = false;
-        }
-    }
-    else {
-
-        mWave -= 0.01f;
-
-        if (mWave <= -1.0f) {
-
-            mWaveUp = true;
-        }
-    }
-
-    int waveIndex = (((mWave + 1.0f) / 2.0f) * GRID_DIM.x);
-    float middle = GRID_DIM.y / 2.0f;
-
-    //set the wave values
-    for (unsigned z = 0; z < GRID_DIM.z; ++z) {
-        for (unsigned y = GRID_DIM.y / 2.0f; y < GRID_DIM.y; ++y) {
-            for (unsigned x = 0; x < GRID_DIM.x; ++x) {
-
-                //check if in the wave
-                if (static_cast<int>(x) == waveIndex &&
-                    static_cast<int>(y) < middle + 2) {
-
-                    mGrid[z][y][x]->setVelocity(getGravity());
-                }
-                else if ((static_cast<int>(x) == waveIndex - 1 ||
-                          static_cast<int>(x) == waveIndex + 1) &&
-                          static_cast<int>(y) == middle) {
-
-                    mGrid[z][y][x]->setVelocity(getGravity());
-                }
-                else if ((waveIndex - 1 == -1 || waveIndex + 1 == GRID_DIM.x) &&
-                          static_cast<int>(x) == waveIndex &&
-                          static_cast<int>(y) == middle + 2) {
-
-                    mGrid[z][y][x]->setVelocity(getGravity());
-                }
-                else {
-
-                    mGrid[z][y][x]->setVelocity(glm::vec3());
-                }
-            }
+            m_HeightMap2[y][x] = (rand() % 100) / 200.0f;
         }
     }
 }
 
 void Liquid::render(liquid::e_RenderMode renderMode) {
 
-    //render based on the rendering mode
     switch (renderMode) {
 
         case liquid::NONE: {
@@ -134,7 +59,6 @@ void Liquid::render(liquid::e_RenderMode renderMode) {
             renderParticles();
 
             //TODO: render border?
-
             break;
         }
         case liquid::RAYTRACE: {
@@ -145,108 +69,82 @@ void Liquid::render(liquid::e_RenderMode renderMode) {
     }
 }
 
-void Liquid::cleanUp() {
-
-    for (unsigned z = 0; z < mGrid.size(); ++z) {
-        for (unsigned y = 0; y < mGrid[z].size(); ++y) {
-
-            while(!mGrid[z][y].empty()) {
-
-                delete mGrid[z][y].back();
-                mGrid[z][y].pop_back();
-            }
-        }
-    }
-
-    mGrid.clear();
-}
-
-glm::vec3 Liquid::getGravity() {
-
-    return glm::vec3(0.0f, -1.0f, 0.0f);
-}
-
 //PRIVATE MEMBER FUNCTIONS
 void Liquid::renderParticles() {
 
-    float x1 = -((GRID_DIM.x / 2.0f) * m_CellSize);
-    float y1 = -((GRID_DIM.y / 2.0f) * m_CellSize);
-    float z1 = -((GRID_DIM.z / 2.0f) * m_CellSize);
+    //the far offsets
+    float x1 = -(GRID_DIM.x / 2.0f) * m_CellSize;
+    float y1 = -(GRID_DIM.x / 2.0f) * m_CellSize;
+    float z1 = -(GRID_DIM.y / 2.0f) * m_CellSize;
+    float halfCell = m_CellSize / 2.0f;
 
-    //render the cells
-    for (unsigned z = 0; z < GRID_DIM.z; ++z) {
-        for (unsigned y = 0; y < GRID_DIM.y; ++y) {
-            for (unsigned x = 0; x < GRID_DIM.x; ++x) {
+    glColor4f(0.0f, 0.5f, 0.8f, 1.0f);
 
-                mGrid[z][y][x]->render(
-                    glm::vec3(x1 + (x * m_CellSize),
-                              y1 + (y * m_CellSize),
-                              z1 + (z * m_CellSize)));
-            }
+    //iterate over the grid and draw as particles
+    for (unsigned y = 0; y < GRID_DIM.y; ++y) {
+        for (unsigned x = 0; x < GRID_DIM.x; ++x) {
+
+            //get the height of the particle
+            float y2 = m_HeightMap2[y][x];
+
+            glPushMatrix();
+
+            glTranslatef(x1 + (x * m_CellSize),
+                0.0f, z1 + (y * m_CellSize));
+
+            glBegin(GL_QUADS);
+
+                //front face
+                glNormal3f(0.0f, 0.0f, 1.0f);
+                glVertex3f( halfCell, y1, halfCell);
+                glVertex3f( halfCell, y2, halfCell);
+                glVertex3f(-halfCell, y2, halfCell);
+                glVertex3f(-halfCell, y1, halfCell);
+
+                //back face
+                glNormal3f(0.0f, 0.0f, -1.0f);
+                glVertex3f(-halfCell, y1, -halfCell);
+                glVertex3f(-halfCell, y2, -halfCell);
+                glVertex3f( halfCell, y2, -halfCell);
+                glVertex3f( halfCell, y1, -halfCell);
+
+                //left face
+                glNormal3f(-1.0f, 0.0f, 0.0f);
+                glVertex3f(-halfCell, y1,  halfCell);
+                glVertex3f(-halfCell, y2,  halfCell);
+                glVertex3f(-halfCell, y2, -halfCell);
+                glVertex3f(-halfCell, y1, -halfCell);
+
+                //right face
+                glNormal3f(1.0f, 0.0f, 0.0f);
+                glVertex3f(halfCell, y1, -halfCell);
+                glVertex3f(halfCell, y2, -halfCell);
+                glVertex3f(halfCell, y2,  halfCell);
+                glVertex3f(halfCell, y1,  halfCell);
+
+                //top face
+                glNormal3f(0.0f, 1.0f, 0.0f);
+                glVertex3f(-halfCell, y2, -halfCell);
+                glVertex3f(-halfCell, y2,  halfCell);
+                glVertex3f( halfCell, y2,  halfCell);
+                glVertex3f( halfCell, y2, -halfCell);
+
+                //bottom face
+                glNormal3f(0.0f, -1.0f, 0.0f);
+                glVertex3f( halfCell, y1, -halfCell);
+                glVertex3f( halfCell, y1,  halfCell);
+                glVertex3f(-halfCell, y1,  halfCell);
+                glVertex3f(-halfCell, y1, -halfCell);
+
+            glEnd();
+
+            glPopMatrix();
         }
     }
 }
 
 void Liquid::renderBorder() {
 
-    float x1 = -((GRID_DIM.x / 2.0f) * m_CellSize) - 0.001f;
-    float x2 = -x1;
-    float y1 = -((GRID_DIM.y / 2.0f) * m_CellSize) - 0.001f;
-    float y2 = -y1;
-    float z1 = -((GRID_DIM.z / 2.0f) * m_CellSize) - 0.001f;
-    float z2 = -z1;
-
-    glColor4f(0.0f, 0.0f, 1.0f, 1.0f);
-
-    glBegin(GL_QUADS);
-
-        //left face inner
-        glVertex3f(x1, y1, z1);
-        glVertex3f(x1, y2, z1);
-        glVertex3f(x1, y2, z2);
-        glVertex3f(x1, y1, z2);
-
-        //right face inner
-        glVertex3f(x2, y1, z2);
-        glVertex3f(x2, y2, z2);
-        glVertex3f(x2, y2, z1);
-        glVertex3f(x2, y1, z1);
-
-        //back face outer
-        glVertex3f(x1, y1, z1);
-        glVertex3f(x1, y2, z1);
-        glVertex3f(x2, y2, z1);
-        glVertex3f(x2, y1, z1);
-        //back face inner
-        glVertex3f(x2, y1, z1);
-        glVertex3f(x2, y2, z1);
-        glVertex3f(x1, y2, z1);
-        glVertex3f(x1, y1, z1);
-
-        //front face outer
-        glVertex3f(x2, y1, z2);
-        glVertex3f(x2, y2, z2);
-        glVertex3f(x1, y2, z2);
-        glVertex3f(x1, y1, z2);
-        //front face inner
-        glVertex3f(x1, y1, z2);
-        glVertex3f(x1, y2, z2);
-        glVertex3f(x2, y2, z2);
-        glVertex3f(x2, y1, z2);
-
-        //left face outer
-        glVertex3f(x1, y1, z2);
-        glVertex3f(x1, y2, z2);
-        glVertex3f(x1, y2, z1);
-        glVertex3f(x1, y1, z1);
-
-        //right face outer
-        glVertex3f(x2, y1, z1);
-        glVertex3f(x2, y2, z1);
-        glVertex3f(x2, y2, z2);
-        glVertex3f(x2, y1, z2);
-
-    glEnd();
 }
 
 // roates the given vector 90 degrees anticlockwise along the z axis
@@ -258,52 +156,37 @@ void rotate90(glm::vec3 *v){
 
 void Liquid::computeHeightMap() {
 
-    unsigned turbMax = GRID_DIM.y - 1;
-    unsigned turbMin = 0;
+    float turbMax = -(GRID_DIM.x / 2.0f) * m_CellSize;
+    float turbMin = -turbMax;
 
     m_HeightMap->clear();
     m_NormalMap->clear();
 
-    //iterate along the first layer of the water and build the heightMap
+    float x1 = -(GRID_DIM.x / 2.0f) * m_CellSize;
+
+    unsigned middleIndex = static_cast<unsigned>(GRID_DIM.y / 2.0f);
+
+    //iterate over the middle row of the height map
     for (unsigned x = 0; x < GRID_DIM.x; ++x) {
 
-        //probe down to find the first non-empty cell
-        for (unsigned y = GRID_DIM.y - 1; /*end condition at bottom*/; --y) {
+        float height = m_HeightMap2[middleIndex][x];
 
-            if (!mGrid[0][y][x]->isEmpty()) {
+        float hx = x1 + (x * m_CellSize);
 
-                //check if min or max
-                if (y < turbMax) {
+        m_HeightMap->push_back(glm::vec3(hx, height, m_CellSize));
 
-                    turbMax = y;
-                }
-                if (y > turbMin) {
+        //check the max and mins
+        if (height > turbMax) {
 
-                    turbMin = y;
-                }
+            turbMax = height;
+        }
+        if (height < turbMin) {
 
-                //store this point in the height map
-                float hx = -(GRID_DIM.x / 2.0) * m_CellSize;
-                hx += x * m_CellSize;
-
-                float hy = -(GRID_DIM.y / 2.0) * m_CellSize;
-                hy += y * m_CellSize;
-
-                m_HeightMap->push_back(glm::vec3(hx, hy, m_CellSize));
-
-
-                break;
-            }
-
-            if (y==0) {
-                printf("collumn was empty, this would've caused a infinite loop\n");
-                printf("Thanks for gcc to point this out, thanks to dom for fixing it\n\n");
-                break;
-            }
+            turbMin = height;
         }
     }
 
-    // compute normals
+    //compute the normals
     for (unsigned int i=0; i<m_HeightMap->size(); ++i) {
         glm::vec3 ht = (*m_HeightMap)[i];
 
@@ -328,9 +211,7 @@ void Liquid::computeHeightMap() {
         m_NormalMap->push_back(glm::normalize(L + R));
     }
 
-    //set the turbulent min and max
-    *m_TurbulentMin = -(GRID_DIM.y / 2.0f) * m_CellSize;
-    *m_TurbulentMin *= turbMin * m_CellSize;
-    *m_TurbulentMax = -(GRID_DIM.y / 2.0f) * m_CellSize;
-    *m_TurbulentMax *= turbMax * m_CellSize;
+    //set the min and max
+    *m_TurbulentMin = turbMin;
+    *m_TurbulentMax = turbMax;
 }

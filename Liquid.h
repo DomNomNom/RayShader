@@ -1,18 +1,17 @@
 #ifndef RAYSHADER_LIQUID_LIQUID_H_
 #   define RAYSHADER_LIQUID_LIQUID_H_
 
+#include <GL/glut.h>
+#include "glm/glm.hpp"
+#include <iostream>
 #include <stdlib.h>
+#include <vector>
 
-class LiquidCell;
-
-#include "LiquidCell.h"
 #include "util.h"
 
 //TYPEDEF
-typedef std::vector<LiquidCell*> LiquidRow;
-typedef std::vector<LiquidRow> LiquidSlice;
-typedef std::vector<LiquidSlice> LiquidGrid;
-typedef std::vector<glm::vec3> FaceList;
+typedef std::vector<float> t_HeightRow;
+typedef std::vector<t_HeightRow> t_HeightMap2;
 typedef std::vector<glm::vec3> t_HeightMap;
 typedef std::vector<glm::vec3> t_NormalMap;
 
@@ -56,37 +55,22 @@ public:
     @renderMode the rendering mode of the water*/
     void render(liquid::e_RenderMode renderMode);
 
-    /*!Cleans up the liquid*/
-    void cleanUp();
-
-    /*!@return the vector of gravity*/
-    static glm::vec3 getGravity();
-
 private:
 
     //VARIABLES
-    //the dimensions of the grid
-    const glm::vec3 GRID_DIM;
+    //the dimensions of the grid (in cell size)
+    const glm::vec2 GRID_DIM;
     //the size of a grid cell
     float m_CellSize;
 
-    //the grid of cells
-    LiquidGrid mGrid;
-
-    //the strength of gravity
-    static float sGravityStrength;
-    //the direction of gravity
-    static glm::vec3 sGravityDirection;
+    //the height map of the water
+    t_HeightMap2 m_HeightMap2;
 
     //ray tracing values
     t_HeightMap* m_HeightMap;
     t_NormalMap* m_NormalMap;
     float* m_TurbulentMin;
     float* m_TurbulentMax;
-
-    //the wave (Testing)
-    float mWave;
-    bool mWaveUp;
 
     //MACROS
     DISALLOW_COPY_AND_ASSIGN(Liquid);
