@@ -55,9 +55,7 @@ float camRotY = 0.0f;
 float camRotX = 0.0f;
 
 bool sphereMove = false;
-float spherePosX = 0.00f;
-float spherePosY = 0.75f;
-float spherePosZ = 0.00f;
+vec4 spherePos = vec4(0.0, 0.75, 0.0, 0.0);
 
 enum RenderMode {
     SHADE_TRACE = 0,
@@ -188,13 +186,12 @@ void display() {
     // //clear colour
     // glClearColor(0.0, 0.0, 0.0, 1.0);
 
+
     //if the camera is being moved
     if (leftMouse) {
-
         sphereMove = false;
 
         if (!camMove) {
-
             //hide the cursor
             glutSetCursor(GLUT_CURSOR_NONE);
             glutWarpPointer(winCentreX, winCentreY);
@@ -202,55 +199,11 @@ void display() {
             camMove = true;
         }
         else {
-
             camRotY += -(mouseDisX / 15.0f);
             camRotX += -(mouseDisY / 15.0f);
             zeroMouseDis();
             glutWarpPointer(winCentreX, winCentreY);
         }
-    }
-    else if (rightMouse) {
-
-        camMove = false;
-
-        if (!sphereMove) {
-
-            //hide the cursor
-            glutSetCursor(GLUT_CURSOR_NONE);
-            glutWarpPointer(winCentreX, winCentreY);
-            zeroMouseDis();
-            sphereMove = true;
-        }
-        else {
-
-            float sx = mouseDisX / 3000.0f;
-            float sy = mouseDisY / 3000.0f;
-            float cy = camRotY * DEGREES_TO_RADIANS;
-            float cx = camRotX * DEGREES_TO_RADIANS;
-
-            spherePosX += (-cos(cy) * sx) + ( sin(cx) * sy);
-            spherePosY += cos(cx) * sy;
-            spherePosZ += (-sin(cy) * sin(cx) * sx) + (-sin(cx) * cos(cy) * sy);
-            zeroMouseDis();
-            glutWarpPointer(winCentreX, winCentreY);
-        }
-    }
-    else {
-
-        //set the cursor back to standard
-        glutSetCursor(GLUT_CURSOR_LEFT_ARROW);
-        sphereMove = false;
-        camMove = false;
-    }
-
-    //set the position of the sphere
-    g_Liquid.setSpherePos(spherePosX, spherePosY, spherePosZ);
-
-    if (currentScene == SCENE_SURFACE) {
-
-        ball_pos[0].x = spherePosX;
-        ball_pos[0].y = spherePosY;
-        ball_pos[0].z = spherePosZ;
     }
 
     // how the camera is transformed
@@ -259,6 +212,51 @@ void display() {
     cameraTransform = rotate(   cameraTransform, camRotY, vec3(0.0f, 1.0f, 0.0f));
     cameraTransform = rotate(   cameraTransform, camRotX, vec3(1.0f, 0.0f, 0.0f));
     cameraTransform = translate(cameraTransform, vec3(0.0, 0.0, -2.0));
+
+    if (rightMouse) {
+        camMove = false;
+        if (!sphereMove) {
+            //hide the cursor
+            glutSetCursor(GLUT_CURSOR_NONE);
+            glutWarpPointer(winCentreX, winCentreY);
+            zeroMouseDis();
+            sphereMove = true;
+        }
+        else {
+            float sx = mouseDisX / 3000.0f;
+            float sy = mouseDisY / 3000.0f;
+            // float cy = camRotY * DEGREES_TO_RADIANS;
+            // float cx = camRotX * DEGREES_TO_RADIANS;
+
+            // spherePosX += (-cos(cy) * sx) + ( sin(cx) * sy);
+            // spherePosY += cos(cx) * sy;
+            // spherePosZ += (-sin(cy) * sin(cx) * sx) + (-sin(cx) * cos(cy) * sy);
+            // printf("before %f\n", sx);
+            // printf("after ");
+            // vec4 af = ;
+            // printVec(&af);
+            spherePos += cameraTransform * vec4(1.0, 0.0, 0.0, 0.0) * sx;
+            spherePos += cameraTransform * vec4(0.0, 1.0, 0.0, 0.0) * sy;
+
+            zeroMouseDis();
+            glutWarpPointer(winCentreX, winCentreY);
+        }
+    }
+    if (!leftMouse && !rightMouse) {
+        //set the cursor back to standard
+        glutSetCursor(GLUT_CURSOR_LEFT_ARROW);
+        sphereMove = false;
+        camMove = false;
+    }
+
+    //set the position of the sphere
+    g_Liquid.setSpherePos(spherePos.x, spherePos.y, spherePos.z);
+
+    if (currentScene == SCENE_SURFACE) {
+        ball_pos[0].x = spherePos.x;
+        ball_pos[0].y = spherePos.y;
+        ball_pos[0].z = spherePos.z;
+    }
 
 
 
@@ -335,14 +333,12 @@ void display() {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
-        //shift the camera back
-        glTranslatef(0.0f, 0.0f, -zoom * 1.5f);
-
-        //rotate the camera position
-        glRotatef(camRotY,  0.0f, 1.0f, 0.0f);
-        glRotatef(camRotX,
-            cos(camRotY * DEGREES_TO_RADIANS), 0,
-            sin(camRotY * DEGREES_TO_RADIANS));
+        // glLoadMatrixf(value_ptr(inverse(cameraTransform)));
+        // //shift the camera back
+        glTranslatef(0.0f, 0.0f, -2.0f);
+        glRotatef(-camRotX, 1.0f, 0.0f, 0.0f);
+        glRotatef(-camRotY, 0.0f, 1.0f, 0.0f);
+        glScalef(1.0/zoom, 1.0/zoom, 1.0/zoom);
 
         //apply lighting
         float direction[]     = {1.0f, 1.0f, 0.0f, 0.0f};
@@ -486,8 +482,8 @@ void mouseMoveHander(int x, int y){
     mouse_x = x;
     mouse_y = y;
 
-    mouseDisX += winCentreX - mouse_x;
-    mouseDisY += winCentreY - mouse_y;
+    mouseDisX += mouse_x - winCentreX;
+    mouseDisY += winCentreY - mouse_y; // WTF!
     //glutPostRedisplay();
 }
 
