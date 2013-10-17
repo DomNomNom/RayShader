@@ -8,7 +8,7 @@ RipplePoint::RipplePoint(const glm::vec2& position, float amplitude,
 	m_Decay(decay),
 	m_Frequency(frequency),
 	m_Speed(speed),
-	m_Time(0.0f) {
+	m_Time(-0.8f) {
 }
 
 //DESTRUCTOR
@@ -32,5 +32,5 @@ void RipplePoint::update(float deltaTime) {
 
 bool RipplePoint::shouldRemove() const {
 
-	return m_Time > 5.0f;
+	return m_Time > 8.0f;
 }

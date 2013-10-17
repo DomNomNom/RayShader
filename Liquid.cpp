@@ -4,7 +4,7 @@
 Liquid::Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
     float* turbulentMin, float* turbulentMax, float* waterBottom,
     float seconds) :
-    GRID_DIM(80, 80),
+    GRID_DIM(64, 64),
     m_HeightMap(heightMap),
     m_NormalMap(normalMap),
     m_TurbulentMin(turbulentMin),
@@ -27,10 +27,6 @@ Liquid::Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
 
     //set the bottom of the water
     *waterBottom = -(GRID_DIM.x / 2.0f) * m_CellSize;
-
-    //create some ripples
-    m_Ripples.push_back(new RipplePoint(glm::vec2(0.0f, 0.0f),
-        0.035f, -4.0f, 20.0f, 0.5f));
 }
 
 //DESTRUCTOR
@@ -82,6 +78,11 @@ void Liquid::update(float seconds) {
                     m_Ripples[i]->computeHeight(cellPos);
             }
 
+            //slow motion on the water
+            m_HeightMap2[y][x] +=
+                (cos((cellPos.x) * 7.0f + seconds * 4.0f) +
+                sin(cellPos.y * 10.0f + seconds * 1.0f)) * 0.001f;
+
             //clamp the height
             if (m_HeightMap2[y][x] < -(GRID_DIM.x / 2.0f) * m_CellSize) {
 
@@ -117,6 +118,7 @@ void Liquid::render(liquid::e_RenderMode renderMode) {
         case liquid::GRID: {
 
             renderParticles();
+            renderSphere();
 
             //TODO: render border?
             break;
@@ -217,6 +219,13 @@ void Liquid::renderParticles() {
 
 void Liquid::renderBorder() {
 
+}
+
+void Liquid::renderSphere() {
+
+    glColor4f(0.8f, 0.8f, 0.8f, 0.5f);
+
+    glutSolidSphere(0.15f, 32, 32);
 }
 
 // roates the given vector 90 degrees anticlockwise along the z axis

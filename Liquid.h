@@ -90,6 +90,9 @@ private:
     /*!Renders the border of the liquid*/
     void renderBorder();
 
+    /*!Renders the sphere*/
+    void renderSphere();
+
     /*!Calculates and sets the ray tracing height map*/
     void computeHeightMap();
 };

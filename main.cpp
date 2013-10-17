@@ -40,6 +40,8 @@ float mouse_x = 0.5;
 float mouse_y = 0.5;
 float zoom = 1.0f;
 int shadowSamples = 0;
+bool leftMouse = false;
+bool rightMouse = false;
 
 enum RenderMode {
     SHADE_TRACE = 0,
@@ -238,7 +240,7 @@ void display() {
         glEnable(GL_LIGHTING);
 
         //set the clear colour
-        glClearColor(0.8, 0.8, 0.8, 1.0);
+        glClearColor(0.3, 0.3, 0.3, 1.0);
 
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
@@ -371,10 +373,8 @@ void keyHander(unsigned char key, int, int) {
             rPos.y = 0.0f;
         }
 
-        //float amplitude = 0.05f * ((rand() % 100) ;
-
         g_Liquid.addRipple(new RipplePoint(rPos,
-            0.02f, -4.0f, 20.0f, 0.5f));
+            0.025, -5.0f, 2.0f, 0.3f));
         zPressed = true;
     }
 
@@ -394,14 +394,34 @@ void reshapeHandler(int, int ht) {
 }
 
 void mouseMoveHander(int x, int y){
-    mouse_x = x/(float)window_wd;
-    mouse_y = y/(float)window_ht;
+
+    if (leftMouse) {
+
+        mouse_x = x/(float)window_wd;
+        mouse_y = y/(float)window_ht;
+    }
     //glutPostRedisplay();
 }
 
-void mouseButtonHandler(int button, int dir, int, int) {
+void mouseButtonHandler(int button, int dir, int x, int y) {
 
-    
+    if (button == 0 && dir == 0) {
+
+        leftMouse = true;
+        mouseMoveHander(x, y);
+    }
+    else if (button == 0 && dir == 1) {
+
+        leftMouse = false;
+    }
+    if (button == 2 && dir == 0) {
+
+        rightMouse = true;
+    }
+    else if (button == 2 && dir == 1) {
+
+        rightMouse = false;
+    }
 
     switch(button) {
         case 3:   zoom -= 0.03f;    break;
