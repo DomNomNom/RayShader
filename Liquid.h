@@ -60,6 +60,10 @@ public:
     /*!Sets the position of the sphere*/
     void setSpherePos(float x, float y, float z);
 
+    void setVortex(bool vt);
+
+    void fill();
+
 private:
 
     //VARIABLES
@@ -71,8 +75,12 @@ private:
     //the height map of the water
     t_HeightMap2 m_HeightMap2;
 
+    float m_Level;
+
     //the list of active ripple points
     RippleList m_Ripples;
+
+    bool m_VortexOn;
 
     glm::vec3 m_SpherePos;
     float m_SphereRad;
@@ -93,6 +101,8 @@ private:
     DISALLOW_COPY_AND_ASSIGN(Liquid);
 
     //PRIVATE MEMBER FUNCTIONS
+    float vortex(const glm::vec2& point, float seconds);
+
     /*!Renders the liquid as particles*/
     void renderParticles();
 

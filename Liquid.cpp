@@ -13,7 +13,9 @@ Liquid::Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
     m_SphereRad(0.15f),
     m_SphereRippleTimer(seconds),
     m_SphereMove(false),
-    m_SphereSpeed(0.0f) {
+    m_SphereSpeed(0.0f),
+    m_VortexOn(false),
+    m_Level(0.0f) {
 
     //calculate the cell size
     m_CellSize = 2.0f / GRID_DIM.x;
@@ -87,19 +89,9 @@ void Liquid::update(float seconds) {
                 (cos((cellPos.x) * 7.0f + seconds * 4.0f) +
                 sin(cellPos.y * 10.0f + seconds * 1.0f)) * 0.001f;
 
-            //clamp the height
-            if (m_HeightMap2[y][x] < -(GRID_DIM.x / 2.0f) * m_CellSize) {
-
-                m_HeightMap2[y][x] = -(GRID_DIM.x / 2.0f) * m_CellSize;
-            }
-            if (m_HeightMap2[y][x] >  (GRID_DIM.x / 2.0f) * m_CellSize) {
-
-                m_HeightMap2[y][x] =  (GRID_DIM.x / 2.0f) * m_CellSize;
-            }
-
             //check if below and touch the sphere
-            if (seconds - m_SphereRippleTimer > 1.0f &&
-                m_SphereMove &&
+            if (seconds - m_SphereRippleTimer > 0.1f &&
+                m_SphereMove && !m_VortexOn &&
                 cellPos.x < m_SpherePos.x &&
                 cellPos.x + m_CellSize > m_SpherePos.x &&
                 cellPos.y < m_SpherePos.z &&
@@ -116,8 +108,32 @@ void Liquid::update(float seconds) {
                     m_SphereRippleTimer = seconds;
                 }
             }
+
+            //vortex
+            if (m_VortexOn) {
+
+                m_HeightMap2[y][x] += vortex(cellPos, seconds);
+            }
+
+            m_HeightMap2[y][x] += m_Level;
+
+            //clamp the height
+            if (m_HeightMap2[y][x] < -(GRID_DIM.x / 2.0f) * m_CellSize) {
+
+                m_HeightMap2[y][x] = -(GRID_DIM.x / 2.0f) * m_CellSize;
+            }
+            if (m_HeightMap2[y][x] >  (GRID_DIM.x / 2.0f) * m_CellSize) {
+
+                m_HeightMap2[y][x] =  (GRID_DIM.x / 2.0f) * m_CellSize;
+            }
         }
     }
+
+    //drain
+    // if (m_VortexOn) {
+
+    //     m_Level -= 0.001f;
+    // }
 
     //find delta time
     float deltaTime = seconds - m_LastTime;
@@ -181,7 +197,47 @@ void Liquid::setSpherePos(float x, float y, float z) {
     m_SpherePos.z = z;
 }
 
+void Liquid::setVortex(bool vt) {
+
+    m_VortexOn = vt;
+}
+
+void Liquid::fill() {
+
+    m_Level = 0.0f;
+}
+
 //PRIVATE MEMBER FUNCTIONS
+float Liquid::vortex(const glm::vec2& point, float seconds) {
+
+    glm::vec2 vPos(m_SpherePos.x, m_SpherePos.z);
+
+    float dis = glm::distance(vPos, point);
+
+    float dip = (15 * dis * dis) + 0.0f;
+
+    float angle = (-1.0f *
+        atan2(vPos.y - point.y, vPos.x - point.x));
+
+    dip += (sin(dis * 10.0 + (angle * 2.0 + seconds * 5.0f)));
+
+    dip = glm::smoothstep(-5.4f, 4.0f, dip);
+
+    if (dip > 1.0f) {
+
+        dip = 1.0f;
+    }
+    else if (dip < -1.0f) {
+
+        dip = 0.0f;
+    }
+
+    dip -= 1.0f;
+
+    return dip;
+}
+
+
 void Liquid::renderParticles() {
 
     //the far offsets
@@ -201,10 +257,17 @@ void Liquid::renderParticles() {
                 tint = -0.3f;
             }
 
-            glColor4f(0.0f, 0.5f + tint, 0.8f, 1.0f);
-
             //get the height of the particle
             float y2 = m_HeightMap2[y][x];
+
+            if (y2 > -0.99f) {
+
+                glColor4f(0.0f, 0.5f + tint, 0.8f, 1.0f);
+            }
+            else {
+
+                glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+            }
 
             glPushMatrix();
 
@@ -263,7 +326,6 @@ void Liquid::renderParticles() {
 }
 
 void Liquid::renderBorder() {
-
 }
 
 void Liquid::renderSphere() {
