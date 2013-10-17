@@ -22,4 +22,9 @@ void operator=(const TypeName&)
 TypeName(const TypeName&);             \
 void operator=(const TypeName&)
 
+inline bool utilFloatEquals(float a, float b) {
+
+	return (a > b - 0.00001f && a < b + 0.00001f);
+}
+
 #endif

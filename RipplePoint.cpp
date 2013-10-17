@@ -8,7 +8,7 @@ RipplePoint::RipplePoint(const glm::vec2& position, float amplitude,
 	m_Decay(decay),
 	m_Frequency(frequency),
 	m_Speed(speed),
-	m_Time(-0.8f) {
+	m_Time(-0.3f) {
 }
 
 //DESTRUCTOR

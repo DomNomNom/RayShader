@@ -9,7 +9,11 @@ Liquid::Liquid(t_HeightMap* heightMap, t_NormalMap* normalMap,
     m_NormalMap(normalMap),
     m_TurbulentMin(turbulentMin),
     m_TurbulentMax(turbulentMax),
-    m_LastTime(seconds) {
+    m_LastTime(seconds),
+    m_SphereRad(0.15f),
+    m_SphereRippleTimer(seconds),
+    m_SphereMove(false),
+    m_SphereSpeed(0.0f) {
 
     //calculate the cell size
     m_CellSize = 2.0f / GRID_DIM.x;
@@ -92,6 +96,26 @@ void Liquid::update(float seconds) {
 
                 m_HeightMap2[y][x] =  (GRID_DIM.x / 2.0f) * m_CellSize;
             }
+
+            //check if below and touch the sphere
+            if (seconds - m_SphereRippleTimer > 1.0f &&
+                m_SphereMove &&
+                cellPos.x < m_SpherePos.x &&
+                cellPos.x + m_CellSize > m_SpherePos.x &&
+                cellPos.y < m_SpherePos.z &&
+                cellPos.y + m_CellSize > m_SpherePos.z) {
+
+                float height = m_HeightMap2[y][x];
+
+                if (height > m_SpherePos.y - m_SphereRad &&
+                    height < m_SpherePos.y + m_SphereRad) {
+
+                    //create a ripple
+                    m_Ripples.push_back(new RipplePoint(cellPos,
+                        0.015 * m_SphereSpeed + 0.005f, -5.0f, 20.0f, 0.4f));
+                    m_SphereRippleTimer = seconds;
+                }
+            }
         }
     }
 
@@ -104,6 +128,8 @@ void Liquid::update(float seconds) {
 
         m_Ripples[i]->update(deltaTime);
     }
+
+    m_SphereMove = false;
 }
 
 void Liquid::render(liquid::e_RenderMode renderMode) {
@@ -134,6 +160,25 @@ void Liquid::render(liquid::e_RenderMode renderMode) {
 void Liquid::addRipple(RipplePoint* ripple) {
 
     m_Ripples.push_back(ripple);
+}
+
+void Liquid::setSpherePos(float x, float y, float z) {
+
+    glm::vec3 oldPos(m_SpherePos.x, m_SpherePos.y, m_SpherePos.z);
+    glm::vec3 newPos(x, y, z);
+
+    m_SphereSpeed = glm::distance(oldPos, newPos) * 15.0f;
+
+    if (!utilFloatEquals(x, m_SpherePos.x) &&
+        !utilFloatEquals(y, m_SpherePos.y) &&
+        !utilFloatEquals(z, m_SpherePos.z)) {
+
+        m_SphereMove = true;
+    }
+
+    m_SpherePos.x = x;
+    m_SpherePos.y = y;
+    m_SpherePos.z = z;
 }
 
 //PRIVATE MEMBER FUNCTIONS
@@ -223,9 +268,15 @@ void Liquid::renderBorder() {
 
 void Liquid::renderSphere() {
 
-    glColor4f(0.8f, 0.8f, 0.8f, 0.5f);
+    glColor4f(0.8f, 0.8f, 0.8f, 1.0f);
 
-    glutSolidSphere(0.15f, 32, 32);
+    glPushMatrix();
+
+        glTranslatef(m_SpherePos.x, m_SpherePos.y, m_SpherePos.z);
+
+        glutSolidSphere(m_SphereRad, 32, 32);
+
+    glPopMatrix();
 }
 
 // roates the given vector 90 degrees anticlockwise along the z axis

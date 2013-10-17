@@ -57,6 +57,9 @@ public:
     /*!Adds a ripple to the the liquid*/
     void addRipple(RipplePoint* ripple);
 
+    /*!Sets the position of the sphere*/
+    void setSpherePos(float x, float y, float z);
+
 private:
 
     //VARIABLES
@@ -70,6 +73,12 @@ private:
 
     //the list of active ripple points
     RippleList m_Ripples;
+
+    glm::vec3 m_SpherePos;
+    float m_SphereRad;
+    float m_SphereRippleTimer;
+    bool m_SphereMove;
+    float m_SphereSpeed;
 
     //ray tracing values
     t_HeightMap* m_HeightMap;
