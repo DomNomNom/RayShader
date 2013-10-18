@@ -3,7 +3,7 @@ RayShader
 
 A realtime ray tracer using GLSL
 
-<!-- ![Screenshot]() -->
+![Screenshot](https://raw.github.com/DomNomNom/RayShader/master/screenshot.png)
 
 External dependencies:
 OpenGL2.0+
