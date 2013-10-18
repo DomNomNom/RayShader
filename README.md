@@ -5,17 +5,21 @@ A realtime ray tracer using GLSL
 
 ![Screenshot](https://raw.github.com/DomNomNom/RayShader/master/screenshot.png)
 
+
 External dependencies:
-OpenGL2.0+
-glut
-libpng
+----------------------
+ * OpenGL2.0+
+ * glut
+ * libpng
 
 
 How to run:
-make && ./build/RayShader
+-----------
+ > make && ./build/RayShader
 
 
- * Controlls:
+Controlls:
+----------
  * Mouse drag - change camera angle
  * Mouse right drag - change ball position
  * Scrollwheel - zoom
