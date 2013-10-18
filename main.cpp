@@ -63,7 +63,7 @@ enum RenderMode {
     OPENGL
 };
 
-RenderMode renderMode = LIQUID_ONLY;
+RenderMode renderMode = SHADE_TRACE;
 
 float modelScale = 0.7;
 
