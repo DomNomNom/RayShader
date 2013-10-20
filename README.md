@@ -25,6 +25,7 @@ Controlls:
  * Scrollwheel - zoom
  * [1-5] - change scene
  * Z - create water ripple
+ * V - create vortex (positioned under ball)
  * W - toggle water
  * E - toggle objects
  * R - toggle whether one sphere is refractive (applies only to scene 1 and 3)
