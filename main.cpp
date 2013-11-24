@@ -70,7 +70,7 @@ float modelScale = 0.7;
 
 
 // scene specifications
-scene currentScene = SCENE_SURFACE;
+scene currentScene = SCENE_PORTAL;
 std::vector<vec4> vertecies;
 std::vector<int> triangles;
 std::vector<vec4> ball_pos;
@@ -86,7 +86,7 @@ std::vector<vec3> water;
 std::vector<vec3> water_normals;
 float turbulent_min, turbulent_max;
 float water_bottom;
-bool water_enabled = true;
+bool water_enabled = false;
 bool model_enabled = true;
 bool portal_enabled = false;
 bool refract_enabled = true;

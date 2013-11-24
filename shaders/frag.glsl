@@ -367,9 +367,28 @@ ret trace(vec4 eye, vec4 dir) {
 vec4 rotate(vec4 v, float theta) {
     // 2D rotation
     float v_x = v.x; // temp variable
-    v.x = cos(theta) * v.x - sin(theta) * v.z;
-    v.z = sin(theta) * v_x + cos(theta) * v.z;
+    v.x = cos(theta) * v.x + sin(theta) * v.z;
+    v.z = -sin(theta) * v_x + cos(theta) * v.z;
     return v;
+}
+
+vec4 transformToOtherPortal(int portal, vec4 dir) {
+    return rotate(dir, (portal==0)? -PI2 : PI2);
+}
+
+
+// http://www.neilmendoza.com/glsl-rotation-about-an-arbitrary-axis/
+mat4 rotationMatrix(vec3 axis, float angle) {
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    return mat4(
+        oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s, oc * axis.z * axis.x + axis.y * s, 0.0,
+        oc * axis.x * axis.y + axis.z * s, oc * axis.y * axis.y + c, oc * axis.y * axis.z - axis.x * s, 0.0,
+        oc * axis.z * axis.x - axis.y * s, oc * axis.y * axis.z + axis.x * s, oc * axis.z * axis.z + c, 0.0,
+        0.0, 0.0, 0.0, 1.0
+    );
 }
 
 // ====== main ======
@@ -402,25 +421,41 @@ void main() {
             // this refraction is a bit of a hack
             r.normal.y *= r.dir.y;
             r.dir = refract(r.dir, r.normal, 0.93);
-            gl_FragColor += vec4(0.01, 0.04, 0.09, 0.0); // water is blu-ish right?
+            gl_FragColor += vec4(0.01, 0.04, 0.09, 0.0); // water is blue-ish right?
 
         }
         else if (r.hit == HIT_TYPE_PORTAL) {
 
-            r.dir = rotate(r.dir, (r.thing==0)? -PI2 : PI2);
+            // // calculate r.dir
+            // r.dir = transformToOtherPortal(r.thing, r.dir);
+            // // reflect(
+            // //     transformToOtherPortal(r.thing, r.dir),
+            // //     vec4(cross(edge1.xyz, edge2.xyz), 0.0)
+            // // );
 
             // calculate r.eye
-            int o = 1 - r.thing; // other portal
-            vec4 edge1 = vertecies[triangles[o+1]] - vertecies[triangles[o  ]];
-            vec4 edge2 = vertecies[triangles[o+2]] - vertecies[triangles[o  ]];
-            r.eye = vertecies[triangles[o]];
-            r.eye += portalUV.y * edge1;
-            r.eye += portalUV.x * edge2;
-            gl_FragColor += vec4(0.2, 0.1, 0.0, 0.0);
+            // int o = 1 - r.thing; // other portal
+            // vec4 edge1 = vertecies[triangles[o+1]] - vertecies[triangles[o  ]];
+            // vec4 edge2 = vertecies[triangles[o+2]] - vertecies[triangles[o  ]];
+            // r.eye = vertecies[triangles[o]];
+            // r.eye += portalUV.y * (edge1);
+            // r.eye += portalUV.x * (edge2);
 
-            // gl_FragColor = vec4((r.eye.xyz + vec3(1.0, 1.0, 1.0))*0.5, 1.0);
+            bool left = r.thing!=0;
+            mat4 portal2portal = rotationMatrix(vec3(0.0, 1.0, 0.0), (left)? -PI2 : PI2);
+            r.eye = portal2portal * r.eye;
+            r.dir = portal2portal * r.dir;
+            r.dir = reflect(r.dir, vec4(1.0, 0.0, 0.0, 0.0));
+            r.dir = reflect(r.dir, vec4(0.0, 0.0, 1.0, 0.0));
+            if (left)   r.eye = reflect(r.eye, vec4(1.0, 0.0, 0.0, 0.0));
+            else        r.eye = reflect(r.eye, vec4(0.0, 0.0, 1.0, 0.0));
+
+            // gl_FragColor = vec4((r.dir.xyz + vec3(1.0, 1.0, 1.0))*0.5, 1.0);
             // return;
 
+            gl_FragColor *= 0.8;
+            if (left)   gl_FragColor += vec4(0.2, 0.1, 0.0, 0.0);
+            else        gl_FragColor += vec4(0.0, 0.1, 0.2, 0.0);
         }
         else if(refract_enabled && r.hit == HIT_TYPE_SPHERE && r.thing==refractThing) {
             r.dir = refract(r.dir, r.normal, 0.93);
