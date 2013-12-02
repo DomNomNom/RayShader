@@ -179,10 +179,16 @@ void setupLighting() {
 }
 
 void zeroMouseDis() {
-
     mouseDisX = 0.0f;
     mouseDisY = 0.0f;
 }
+
+// should be called when the view of scene has changed and needs
+// to converge on a new image
+void changed() {
+    framesWithoutChange = 0;
+}
+
 
 void display() {
     seconds += time_dt();
@@ -194,26 +200,17 @@ void display() {
         framecount = 0;
     }
 
-    // printf("time %f\n", seconds);
+    prevFrame_ratio = 1.0 / (framesWithoutChange + 1.0);
+    framesWithoutChange += 1; // technically it should be done at the end of the frame
 
     // switch render source and target
     renderTarget = 1 - renderTarget;
     renderSource = 1 - renderSource;
     // printf("%d %d\n", rendert[0], rendert[1]);
 
-
     // Render to our framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, framebufferNames[renderTarget]);
-    // glViewport(0, 0, 1.0/(window_ht/aspectRatio), 1.0/window_ht);
-    // glViewport(0.0, 0, 1.0, 1.0);
 
-    // // Set "renderedTexture" as our colour attachement #0
-    // GLenum colorAttachment = (renderSource)? GL_COLOR_ATTACHMENT1 : GL_COLOR_ATTACHMENT0;
-    // glFramebufferTexture(GL_FRAMEBUFFER, colorAttachment, renderTextures[renderSource], 0);
-
-    // // Set the list of draw buffers.
-    // GLenum DrawBuffers[1] = { colorAttachment };
-    // glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
 
     // Always check that our framebuffer is ok
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -309,7 +306,7 @@ void display() {
         // pass texture samplers
         glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
         glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, renderTextures[renderSource]);
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0);  // this fixed a bug where the texture behaves as one colour. I don't know why
 
         shader.bind();
 
@@ -541,6 +538,7 @@ void keyHander(unsigned char key, int, int) {
         zPressed = true;
     }
 
+    changed();
     //glutPostRedisplay();
 }
 
@@ -590,6 +588,12 @@ void mouseMoveHander(int x, int y){
 
     // mouse_x = x/(float)window_wd;
     // mouse_y = y/(float)window_ht;
+    if (
+        (leftMouse || rightMouse) &&
+        (mouse_x != x || mouse_y != y)
+    ) {
+        changed();
+    }
 
     mouse_x = x;
     mouse_y = y;
@@ -597,6 +601,7 @@ void mouseMoveHander(int x, int y){
     mouseDisX += mouse_x - winCentreX;
     mouseDisY += winCentreY - mouse_y; // WTF!
     //glutPostRedisplay();
+
 }
 
 void mouseButtonHandler(int button, int dir, int x, int y) {
@@ -616,8 +621,8 @@ void mouseButtonHandler(int button, int dir, int x, int y) {
     }
 
     switch(button) {
-        case 3:   zoom -= 0.03f;    break;
-        case 4:   zoom += 0.03f;    break;
+        case 3:   zoom -= 0.03f;    changed();  break;
+        case 4:   zoom += 0.03f;    changed();  break;
     }
 
     //clamp
@@ -629,12 +634,6 @@ void mouseButtonHandler(int button, int dir, int x, int y) {
     }
 }
 
-
-
-void initRenderTexture() {
-
-
-}
 
 int main(int argc, char** argv) {
     time_init();

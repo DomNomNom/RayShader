@@ -94,7 +94,7 @@ ret min_ret(ret a, ret b) {
 // ====== functions ======
 
 vec2 randomV = v.xy * sin(time);
-float rand() {
+float rand() { // returns a random value within the range -1.0 to 1.0
     float random = fract(sin(dot(randomV.xy, vec2(12.9898, 78.233)))* 43758.5453)  *2.0 - 1.0;
     randomV = vec2(random, randomV.y*0.6364+randomV.x*0.2412+1.3);
     return random;
@@ -401,6 +401,10 @@ mat4 rotationMatrix(vec3 axis, float angle) {
 // ====== main ======
 
 void main() {
+    v.x += rand() * 0.002;
+    v.y += rand() * 0.002;
+
+
     gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
     ret r = ret(
         vec4(0.0),
@@ -499,7 +503,11 @@ void main() {
     gl_FragColor.a = 1.0;
 
 
-    gl_FragColor = mix(gl_FragColor, texture2D(prevFrame, (v.xy*0.5)+vec2(0.5, 0.5)), 0.9);
+    gl_FragColor = mix(
+        texture2D(prevFrame, (v.xy*0.5) + vec2(0.5, 0.5)), // screenspace to UV
+        gl_FragColor,
+        prevFrame_ratio
+    );
 
     // gl_FragColor = vec4(rand3D(), 0.0);
     // gl_FragColor *= 1.5;
