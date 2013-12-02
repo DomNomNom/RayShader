@@ -499,7 +499,7 @@ void main() {
     gl_FragColor.a = 1.0;
 
 
-    gl_FragColor = mix(gl_FragColor, texture2D(prevFrame, v.xy), 0.9);
+    gl_FragColor = mix(gl_FragColor, texture2D(prevFrame, (v.xy*0.5)+vec2(0.5, 0.5)), 0.9);
 
     // gl_FragColor = vec4(rand3D(), 0.0);
     // gl_FragColor *= 1.5;

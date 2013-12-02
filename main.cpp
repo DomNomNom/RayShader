@@ -307,8 +307,9 @@ void display() {
         g_Liquid.render(liquid::RAYTRACE);
 
         // pass texture samplers
-        glActiveTexture(GL_TEXTURE0+1); glBindTexture(GL_TEXTURE_2D, renderTextures[renderSource]);
-        glActiveTexture(GL_TEXTURE0+0); glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+        glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+        glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, renderTextures[renderSource]);
+        glActiveTexture(GL_TEXTURE0);
 
         shader.bind();
 
