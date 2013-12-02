@@ -26,8 +26,8 @@ using namespace glm;
 Shader shader;
 
 GLuint window;
-int window_wd = 512;
-int window_ht = 512;
+int window_wd = 600;
+int window_ht = 600;
 float aspectRatio = window_wd / window_ht;
 float window_xOffset;
 
@@ -210,6 +210,7 @@ void display() {
 
     // Render to our framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, framebufferNames[renderTarget]);
+    glViewport(0, 0, window_wd, window_ht);
 
 
     // Always check that our framebuffer is ok
@@ -550,19 +551,6 @@ void keyUp(unsigned char key, int, int) {
     }
 }
 
-void reshapeHandler(int wd, int ht) {
-    window_wd = wd;
-    window_ht = ht;
-
-    winCentreX = wd / 2.0f;
-    winCentreY = ht / 2.0f;
-    window_xOffset = (wd - (ht/aspectRatio)) / 2.0f;
-
-    glViewport(window_xOffset, 0, window_ht/aspectRatio, window_ht);
-
-
-}
-
 void initFrameBuffers() {
     for (int i=0; i<2; ++i) {
         glEnable(GL_TEXTURE_2D);
@@ -580,8 +568,21 @@ void initFrameBuffers() {
         glGenFramebuffers(1, &framebufferNames[i]);
         glBindFramebuffer(GL_FRAMEBUFFER, framebufferNames[i]);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTextures[i], 0);
-
     }
+    changed();
+}
+
+void reshapeHandler(int wd, int ht) {
+    window_wd = wd;
+    window_ht = ht;
+
+    winCentreX = wd / 2.0f;
+    winCentreY = ht / 2.0f;
+    window_xOffset = (wd - (ht/aspectRatio)) / 2.0f;
+
+    glViewport(window_xOffset, 0, window_ht/aspectRatio, window_ht);
+
+    initFrameBuffers();
 }
 
 void mouseMoveHander(int x, int y){
@@ -642,7 +643,7 @@ int main(int argc, char** argv) {
 
 
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-    glutInitWindowSize(512, 512);
+    glutInitWindowSize(window_wd, window_ht);
     window = glutCreateWindow("RayShader");
 
     glutDisplayFunc(display);
