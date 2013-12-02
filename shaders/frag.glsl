@@ -401,15 +401,19 @@ mat4 rotationMatrix(vec3 axis, float angle) {
 // ====== main ======
 
 void main() {
-    v.x += rand() * 0.002;
-    v.y += rand() * 0.002;
+    // v.x += rand() * 0.002;
+    // v.y += rand() * 0.002;
 
 
     gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
     ret r = ret(
         vec4(0.0),
         cameraTransform * vec4(0.0, 0.0, 0.0, 1.0),
-        cameraTransform * normalize(vec4(v.xy, 1.5, 0.0)), // decrease the y component for more FoV
+        cameraTransform * normalize(vec4(
+            v.xy + 0.001 * vec2(rand(), rand()),
+            1.5, // decrease this for more FoV
+            0.0
+        )),
         0.0,
         HIT_TYPE_INITIAL,
         0
