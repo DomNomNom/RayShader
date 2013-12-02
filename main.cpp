@@ -26,9 +26,10 @@ using namespace glm;
 Shader shader;
 
 GLuint window;
-int window_wd = 600;
-int window_ht = 600;
+int window_wd = 512;
+int window_ht = 512;
 float aspectRatio = window_wd / window_ht;
+float window_xOffset;
 
 int framecount = 0;
 float seconds = 0;
@@ -49,6 +50,15 @@ float winCentreY = 0.0f;
 //the distance the mouse has moved from the centre
 float mouseDisX = 0.0f;
 float mouseDisY = 0.0f;
+
+GLuint framebufferNames[2]; // The frame buffer objects
+GLuint renderTextures[2];   // The textures we're going to render to
+unsigned int renderSource = 0;
+unsigned int renderTarget = 1;
+GLuint prevFrame;
+bool prevFrame_enabled = true;
+int framesWithoutChange = 0;
+float prevFrame_ratio = 1.0 / (framesWithoutChange + 1.0);
 
 bool camMove = false;
 float camRotY = 0.0f;
@@ -75,8 +85,10 @@ std::vector<vec4> vertecies;
 std::vector<int> triangles;
 std::vector<vec4> ball_pos;
 std::vector<float> ball_radius;
+
 GLuint skybox;
 bool skybox_enabled = true;
+
 
 bool zPressed = false;
 bool vortex = false;
@@ -101,6 +113,8 @@ GLfloat material_diffuse[]  = {1.0, 0.0, 0.0, 1.0};
 GLfloat material_ambient[]  = {1.0, 1.0, 1.0, 1.0};
 GLfloat material_specular[] = {8.8, 8.8, 8.8, 1.0};
 GLfloat material_shininess[] = {89};
+
+
 
 Liquid g_Liquid(
     &water,
@@ -181,6 +195,31 @@ void display() {
     }
 
     // printf("time %f\n", seconds);
+
+    // switch render source and target
+    renderTarget = 1 - renderTarget;
+    renderSource = 1 - renderSource;
+    // printf("%d %d\n", rendert[0], rendert[1]);
+
+
+    // Render to our framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, framebufferNames[renderTarget]);
+    // glViewport(0, 0, 1.0/(window_ht/aspectRatio), 1.0/window_ht);
+    // glViewport(0.0, 0, 1.0, 1.0);
+
+    // // Set "renderedTexture" as our colour attachement #0
+    // GLenum colorAttachment = (renderSource)? GL_COLOR_ATTACHMENT1 : GL_COLOR_ATTACHMENT0;
+    // glFramebufferTexture(GL_FRAMEBUFFER, colorAttachment, renderTextures[renderSource], 0);
+
+    // // Set the list of draw buffers.
+    // GLenum DrawBuffers[1] = { colorAttachment };
+    // glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+    // Always check that our framebuffer is ok
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        printf("bad framebuffer\n");
+        exit(-1);
+    }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
@@ -268,9 +307,8 @@ void display() {
         g_Liquid.render(liquid::RAYTRACE);
 
         // pass texture samplers
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
-        // glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+        glActiveTexture(GL_TEXTURE0+1); glBindTexture(GL_TEXTURE_2D, renderTextures[renderSource]);
+        glActiveTexture(GL_TEXTURE0+0); glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
 
         shader.bind();
 
@@ -300,9 +338,14 @@ void display() {
         glUniform1i( glGetUniformLocation(shader.id(), "portal_enabled"), portal_enabled);
         glUniform1i( glGetUniformLocation(shader.id(), "refract_enabled"), refract_enabled);
 
-        glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "skybox"), 0); //Texture unit 0
         glUniform1i( glGetUniformLocation(shader.id(), "skybox_enabled"), skybox_enabled);
+        glUniform1i( glGetUniformLocation(shader.id(), "prevFrame"), 1); //Texture unit 1
+        glUniform1i( glGetUniformLocation(shader.id(), "prevFrame_enabled"), prevFrame_enabled);
+        glUniform1f( glGetUniformLocation(shader.id(), "prevFrame_ratio"), prevFrame_ratio);
+
+
+        glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
         glUniform1i( glGetUniformLocation(shader.id(), "shadowSamples"), shadowSamples);
         glUniform1f( glGetUniformLocation(shader.id(), "time"), seconds);
         glUniformMatrix4fv(glGetUniformLocation(shader.id(), "cameraTransform"), 1, false, value_ptr(cameraTransform));
@@ -397,12 +440,40 @@ void display() {
 
     // undoView();
 
+
+
+    // Render to the screen
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);// Render to the screen
+    glViewport(window_xOffset, 0, window_ht/aspectRatio, window_ht);
+    // render the most recent renderTextures
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+    glBindTexture(GL_TEXTURE_2D, renderTextures[renderTarget]);
+
+    glColor4f(1,1,1,1);
+    float tv = 1.0;
+    glBegin(GL_TRIANGLES);
+        // two triangles that cover the screen
+        glTexCoord2f(0, 0); glVertex3f(-tv,-tv, 0.0);
+        glTexCoord2f(1, 0); glVertex3f( tv,-tv, 0.0);
+        glTexCoord2f(0, 1); glVertex3f(-tv, tv, 0.0);
+
+        glTexCoord2f(1, 1); glVertex3f( tv, tv, 0.0);
+        glTexCoord2f(0, 1); glVertex3f(-tv, tv, 0.0);
+        glTexCoord2f(1, 0); glVertex3f( tv,-tv, 0.0);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_LIGHTING);
+
     glutSwapBuffers();
     glutPostRedisplay();
 }
 
 void idle() {
-
     g_Liquid.update(seconds);
 }
 
@@ -481,13 +552,37 @@ void keyUp(unsigned char key, int, int) {
 }
 
 void reshapeHandler(int wd, int ht) {
+    window_wd = wd;
+    window_ht = ht;
 
     winCentreX = wd / 2.0f;
     winCentreY = ht / 2.0f;
+    window_xOffset = (wd - (ht/aspectRatio)) / 2.0f;
 
-    float xPos = (wd - (ht/aspectRatio)) / 2.0f;
+    glViewport(window_xOffset, 0, window_ht/aspectRatio, window_ht);
 
-    glViewport(xPos, 0, ht/aspectRatio, ht);
+
+}
+
+void initFrameBuffers() {
+    for (int i=0; i<2; ++i) {
+        glEnable(GL_TEXTURE_2D);
+        glGenTextures(1, &renderTextures[i]);
+        glBindTexture(GL_TEXTURE_2D, renderTextures[i]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window_wd, window_ht, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+        glDisable(GL_TEXTURE_2D);
+
+
+        //create framebufferNames[i] and attach texture A to it
+        glGenFramebuffers(1, &framebufferNames[i]);
+        glBindFramebuffer(GL_FRAMEBUFFER, framebufferNames[i]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTextures[i], 0);
+
+    }
 }
 
 void mouseMoveHander(int x, int y){
@@ -506,20 +601,16 @@ void mouseMoveHander(int x, int y){
 void mouseButtonHandler(int button, int dir, int x, int y) {
 
     if (button == 0 && dir == 0) {
-
         leftMouse = true;
         mouseMoveHander(x, y);
     }
     else if (button == 0 && dir == 1) {
-
         leftMouse = false;
     }
     if (button == 2 && dir == 0) {
-
         rightMouse = true;
     }
     else if (button == 2 && dir == 1) {
-
         rightMouse = false;
     }
 
@@ -537,12 +628,21 @@ void mouseButtonHandler(int button, int dir, int x, int y) {
     }
 }
 
+
+
+void initRenderTexture() {
+
+
+}
+
 int main(int argc, char** argv) {
     time_init();
 
     glutInit(&argc, argv);
+
+
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-    glutInitWindowSize(600, 600);
+    glutInitWindowSize(512, 512);
     window = glutCreateWindow("RayShader");
 
     glutDisplayFunc(display);
@@ -554,6 +654,9 @@ int main(int argc, char** argv) {
     glutPassiveMotionFunc(mouseMoveHander);
     glutMouseFunc(mouseButtonHandler);
 
+    // initialize the framebuffer
+    initFrameBuffers();
+
     // // initialize triangles
     // for (int i=0; i<numTriangles; ++i) {
     //     float theta = i/float(numTriangles) * 2.0*PI;
@@ -561,6 +664,7 @@ int main(int argc, char** argv) {
     //     triangles[i*3 +2].z = sin(theta);
     // printf("A: %f %f\n", triangles[i*3 +2].y, triangles[i*3 +2].z);
     // }
+
 
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClearDepth(1000);
