@@ -59,6 +59,7 @@ GLuint prevFrame;
 bool prevFrame_enabled = true;
 int framesWithoutChange = 0;
 float prevFrame_ratio = 1.0 / (framesWithoutChange + 1.0);
+bool softDiffuse = true;
 
 bool camMove = false;
 float camRotY = 0.0f;
@@ -80,7 +81,7 @@ float modelScale = 0.7;
 
 
 // scene specifications
-scene currentScene = SCENE_PORTAL;
+scene currentScene = SCENE_SOFT;
 std::vector<vec4> vertecies;
 std::vector<int> triangles;
 std::vector<vec4> ball_pos;
@@ -104,6 +105,7 @@ bool portal_enabled = false;
 bool refract_enabled = true;
 
 // lights
+float light_position[]  = {0.4, 0.5, -0.6, 1.0};
 float light_direction[] = {1.0f, 0.0f, 0.0f};
 GLfloat light_ambient[]     = {0.1, 0.1, 0.1, 1.0};
 GLfloat light_diffuse[]     = {0.7, 0.7, 0.7, 1.0};
@@ -167,17 +169,22 @@ float openglCoords(float val) {
 
 //applies lighting
 void setupLighting() {
+    // glPushMatrix();
+    //     glRotatef(60, 0, 0, 1);
+    //     glRotatef(30, 0, 1, 0);
+    //     glLightfv(GL_LIGHT0, GL_POSITION, light_direction);
+    //     glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
+    //     glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
+    //     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    // glPopMatrix();
 
-    glPushMatrix();
-        glRotatef(60, 0, 0, 1);
-        glRotatef(30, 0, 1, 0);
-        glLightfv(GL_LIGHT0, GL_POSITION, light_direction);
-        glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
-        glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
-        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-    glPopMatrix();
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
+    glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
 }
 
+// resets the distance the mouse travelled
 void zeroMouseDis() {
     mouseDisX = 0.0f;
     mouseDisY = 0.0f;
@@ -200,6 +207,7 @@ void display() {
         framecount = 0;
     }
 
+    if (water_enabled) framesWithoutChange = 0;
     prevFrame_ratio = 1.0 / (framesWithoutChange + 1.0);
     framesWithoutChange += 1; // technically it should be done at the end of the frame
 
@@ -233,15 +241,16 @@ void display() {
         if (!camMove) {
             //hide the cursor
             glutSetCursor(GLUT_CURSOR_NONE);
-            glutWarpPointer(winCentreX, winCentreY);
+            //glutWarpPointer(winCentreX, winCentreY);
             zeroMouseDis();
             camMove = true;
         }
         else {
-            camRotY += -(mouseDisX / 15.0f);
-            camRotX += -(mouseDisY / 15.0f);
+            float mouseSensitivity = 3.0;
+            camRotY += mouseSensitivity * (mouseDisX / 15.0f);
+            camRotX += mouseSensitivity * (mouseDisY / 15.0f);
             zeroMouseDis();
-            glutWarpPointer(winCentreX, winCentreY);
+            //glutWarpPointer(winCentreX, winCentreY);
         }
     }
 
@@ -342,6 +351,7 @@ void display() {
         glUniform1i( glGetUniformLocation(shader.id(), "prevFrame"), 1); //Texture unit 1
         glUniform1i( glGetUniformLocation(shader.id(), "prevFrame_enabled"), prevFrame_enabled);
         glUniform1f( glGetUniformLocation(shader.id(), "prevFrame_ratio"), prevFrame_ratio);
+        glUniform1f( glGetUniformLocation(shader.id(), "softDiffuse"), softDiffuse);
 
 
         glUniform2f( glGetUniformLocation(shader.id(), "mouse"), extremify(mouse_x), extremify(mouse_y));
@@ -508,6 +518,7 @@ void keyHander(unsigned char key, int, int) {
         case '3': currentScene = SCENE_WATER;      reloadScene();   break;
         case '4': currentScene = SCENE_OBJ;        reloadScene();   break;
         case '5': currentScene = SCENE_PORTAL;     reloadScene();   break;
+        case '6': currentScene = SCENE_SOFT;       reloadScene();   break;
         case 'a': renderMode = OPENGL;                              break;
         case 's': renderMode = SHADE_TRACE;                         break;
         case 'd': renderMode = LIQUID_ONLY;                         break;
@@ -515,6 +526,7 @@ void keyHander(unsigned char key, int, int) {
         case ']': shadowSamples += 1;                               break;
         case '[': shadowSamples -= 1;                               break;
         case 'p': shadowSamples  = 0;                               break;
+        case 'q': softDiffuse = !softDiffuse;                       break;
         case 'w': water_enabled = !water_enabled;                   break;
         case 'e': model_enabled = !model_enabled;                   break;
         case 'o': portal_enabled = !portal_enabled;                 break;
@@ -585,6 +597,8 @@ void reshapeHandler(int wd, int ht) {
     initFrameBuffers();
 }
 
+float mouse_x_prev = 0.0;
+float mouse_y_prev = 0.0;
 void mouseMoveHander(int x, int y){
 
     // mouse_x = x/(float)window_wd;
@@ -596,11 +610,17 @@ void mouseMoveHander(int x, int y){
         changed();
     }
 
+    mouse_x_prev = mouse_x;
+    mouse_y_prev = mouse_y;
     mouse_x = x;
     mouse_y = y;
 
-    mouseDisX += mouse_x - winCentreX;
-    mouseDisY += winCentreY - mouse_y; // WTF!
+
+
+    // mouseDisX -= mouse_x - winCentreX;
+    // mouseDisY += winCentreY - mouse_y; // WTF!
+    mouseDisX -= mouse_x - mouse_x_prev;
+    mouseDisY += mouse_y - mouse_y_prev; // WTF!
     //glutPostRedisplay();
 
 }
@@ -674,7 +694,7 @@ int main(int argc, char** argv) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_CULL_FACE);
+    // glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glEnable(GL_LIGHTING);
     glEnable(GL_COLOR_MATERIAL);
@@ -692,7 +712,7 @@ int main(int argc, char** argv) {
     winCentreX = window_wd / 2.0f;
     winCentreY = window_ht / 2.0f;
 
-    glutWarpPointer(winCentreX, winCentreY);
+    // glutWarpPointer(winCentreX, winCentreY);
 
     glutMainLoop();
 

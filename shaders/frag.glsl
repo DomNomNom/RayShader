@@ -23,6 +23,7 @@ uniform bool        skybox_enabled;
 uniform sampler2D   prevFrame;
 uniform bool        prevFrame_enabled;
 uniform float       prevFrame_ratio;
+uniform bool        softDiffuse;
 
 uniform vec3 water        [80];
 uniform vec3 water_normals[80];
@@ -57,6 +58,9 @@ bool debug = false;
 
 bool portalled = false;
 vec2 portalUV = vec2(0.0);
+
+vec4 newLight; // light + a small offset
+float lightSize = 0.1;
 
 // ====== ret ======
 
@@ -116,7 +120,8 @@ vec4 specular(vec4 dir) {
     ), 0.0, 1.0);
 }
 
-float diffuse (vec4 normal) {  return clamp(dot(normal, vertex_light_position), 0.0, 1.0); }
+float diffuse (vec4 normal, vec4 toLight) { return clamp(dot(normal, toLight), 0.0, 1.0); }
+float diffuse (vec4 normal) {  return clamp(dot(normal, vertex_light_position), 0.0, 1.0); } // assumes directional light
 float diffuse2(vec4 normal) {  return   abs(dot(normal, vertex_light_position)          ); } // a two-sided version.
 
 bool floatZero(float f) {
@@ -246,7 +251,7 @@ ret trace_triangles(vec4 eye, vec4 dir) {
             r.hit = HIT_TYPE_TRIANGLE;
             r.eye = intersect;
             r.normal = vec4(normalize(cross(edge1, edge2)), 0.0);
-            r.thing = i;
+            r.thing = i / 3;
 
             if (portal_enabled) {
                 // if (xor(
@@ -398,6 +403,23 @@ mat4 rotationMatrix(vec3 axis, float angle) {
     );
 }
 
+// adapted from http://madebyevan.com/webgl-path-tracing/
+vec3 cosineWeightedDirection(vec3 normal) {
+    float u = rand();
+    float v = rand();
+    float r = sqrt(u);
+    float angle = 6.283185307179586 * v;
+    vec3 sdir;
+    if (abs(normal.x) < 0.5) {
+        sdir = cross(normal, vec3(1,0,0));
+    }
+    else {
+        sdir = cross(normal, vec3(0,1,0));
+    }
+    vec3 tdir = cross(normal, sdir);
+    return r*cos(angle)*sdir + r*sin(angle)*tdir + sqrt(1.-u)*normal;
+}
+
 // ====== main ======
 
 void main() {
@@ -422,7 +444,11 @@ void main() {
 
     float shadow = 1.0;
     float bounce;
-    for (bounce=0.0; r.hit>HIT_TYPE_NO_HIT && bounce<7.0; bounce+=1.0) {
+    float maxBounces = 7.0;
+    if (softDiffuse) {
+        maxBounces = 3.0;
+    }
+    for (bounce=0.0; r.hit>HIT_TYPE_NO_HIT && bounce<maxBounces; bounce+=1.0) {
         r = trace(r.eye, r.dir);
         // return;
 
@@ -491,19 +517,45 @@ void main() {
                 }
             }
 
-            // diffuse only if we don't have a skybox
-            if (!skybox_enabled) {
-                vec4 diffuse = vec4(1.0, 0.0, 0.0, 0.0) * diffuse(r.normal);
+            // diffuse only if we don't have a skybox or we are in diffuse mode
+            if (softDiffuse || !skybox_enabled) {
+                vec4 colour = vec4(0.5, 0.5, 0.5, 1.0);
+                if (softDiffuse) {
+                    if (
+                        r.thing == 2 ||
+                        r.thing == 3
+                    ) {
+                        colour = vec4(1.0, 0.2, 0.2, 1.0);
+                    }
+                    else if (
+                        r.thing == 6 ||
+                        r.thing == 7
+                    ) {
+                        colour = vec4(0.9, 0.9, 0.0, 1.0);
+                    }
+                    // r.normal += 0.5*normalize(rand3D());
+                    // r.normal = normalize(r.normal);
+                    newLight = vertex_light_position + 0.09*rand3D();
+                    colour *= diffuse(r.normal, newLight - r.eye);
+                    // r.dir += 0.5*normalize(rand3D());
+                    // r.dir = normalize(r.dir);
+                    r.dir = vec4(cosineWeightedDirection(r.normal.xyz), 0.0);
+                }
+                else {
+                    colour *= diffuse(r.normal);
+                }
                 // diffuse += vec4(0.0, 0.3, 0.0, 0.0); // ambient
-                gl_FragColor += diffuse * pow(0.4, bounce+1.0);
+                gl_FragColor += colour * pow(0.8, bounce+0.0);
             }
 
         }
 
     }
 
-    gl_FragColor += specular(r.dir) * pow(0.85, bounce);
-    gl_FragColor *= shadow;
+    if (!softDiffuse) {
+        gl_FragColor += specular(r.dir) * pow(0.85, bounce);
+        gl_FragColor *= shadow;
+    }
     gl_FragColor.a = 1.0;
 
 

@@ -8,7 +8,8 @@ enum scene {
     SCENE_SURFACE,
     SCENE_WATER,
     SCENE_OBJ,
-    SCENE_PORTAL
+    SCENE_PORTAL,
+    SCENE_SOFT
 };
 
 void loadScene(
