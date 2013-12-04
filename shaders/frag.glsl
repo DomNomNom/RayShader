@@ -405,10 +405,9 @@ mat4 rotationMatrix(vec3 axis, float angle) {
 
 // adapted from http://madebyevan.com/webgl-path-tracing/
 vec3 cosineWeightedDirection(vec3 normal) {
-    float u = rand();
-    float v = rand();
+    float u = abs(rand());
     float r = sqrt(u);
-    float angle = 6.283185307179586 * v;
+    float angle = 6.283185307179586 * rand();
     vec3 sdir;
     if (abs(normal.x) < 0.5) {
         sdir = cross(normal, vec3(1,0,0));
@@ -417,7 +416,7 @@ vec3 cosineWeightedDirection(vec3 normal) {
         sdir = cross(normal, vec3(0,1,0));
     }
     vec3 tdir = cross(normal, sdir);
-    return r*cos(angle)*sdir + r*sin(angle)*tdir + sqrt(1.-u)*normal;
+    return r*cos(angle)*sdir + r*sin(angle)*tdir + sqrt(1.0-u)*normal;
 }
 
 // ====== main ======
@@ -536,7 +535,7 @@ void main() {
                     // r.normal += 0.5*normalize(rand3D());
                     // r.normal = normalize(r.normal);
                     newLight = vertex_light_position + 0.09*rand3D();
-                    colour *= diffuse(r.normal, normalize(newLight - r.eye));
+                    colour *= 0.5 * diffuse(r.normal, normalize(newLight - r.eye));
                     // r.dir += 0.5*normalize(rand3D());
                     // r.dir = normalize(r.dir);
                     r.dir = vec4(cosineWeightedDirection(r.normal.xyz), 0.0);
