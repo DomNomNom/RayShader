@@ -536,7 +536,7 @@ void main() {
                     // r.normal += 0.5*normalize(rand3D());
                     // r.normal = normalize(r.normal);
                     newLight = vertex_light_position + 0.09*rand3D();
-                    colour *= diffuse(r.normal, newLight - r.eye);
+                    colour *= diffuse(r.normal, normalize(newLight - r.eye));
                     // r.dir += 0.5*normalize(rand3D());
                     // r.dir = normalize(r.dir);
                     r.dir = vec4(cosineWeightedDirection(r.normal.xyz), 0.0);
@@ -545,7 +545,8 @@ void main() {
                     colour *= diffuse(r.normal);
                 }
                 // diffuse += vec4(0.0, 0.3, 0.0, 0.0); // ambient
-                gl_FragColor += colour * pow(0.8, bounce+0.0);
+                // gl_FragColor += colour * pow(0.4, bounce+0.0);
+                gl_FragColor += colour;
             }
 
         }

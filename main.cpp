@@ -105,7 +105,8 @@ bool portal_enabled = false;
 bool refract_enabled = true;
 
 // lights
-float light_position[]  = {0.4, 0.5, -0.6, 1.0};
+// float light_position[]  = {0.4, 0.5, -0.6, 1.0};
+float light_position[]  = {0.8, 1.0, -1.2, 1.0};
 float light_direction[] = {1.0f, 0.0f, 0.0f};
 GLfloat light_ambient[]     = {0.1, 0.1, 0.1, 1.0};
 GLfloat light_diffuse[]     = {0.7, 0.7, 0.7, 1.0};
@@ -246,7 +247,7 @@ void display() {
             camMove = true;
         }
         else {
-            float mouseSensitivity = 3.0;
+            float mouseSensitivity = 5.0;
             camRotY += mouseSensitivity * (mouseDisX / 15.0f);
             camRotX += mouseSensitivity * (mouseDisY / 15.0f);
             zeroMouseDis();
@@ -266,7 +267,7 @@ void display() {
         if (!sphereMove) {
             //hide the cursor
             glutSetCursor(GLUT_CURSOR_NONE);
-            glutWarpPointer(winCentreX, winCentreY);
+            // glutWarpPointer(winCentreX, winCentreY);
             zeroMouseDis();
             sphereMove = true;
         }
@@ -287,7 +288,7 @@ void display() {
             spherePos += cameraTransform * vec4(0.0, 1.0, 0.0, 0.0) * sy;
 
             zeroMouseDis();
-            glutWarpPointer(winCentreX, winCentreY);
+            // glutWarpPointer(winCentreX, winCentreY);
         }
     }
     if (!leftMouse && !rightMouse) {
