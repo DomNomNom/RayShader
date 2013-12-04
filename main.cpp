@@ -107,6 +107,7 @@ bool refract_enabled = true;
 // lights
 // float light_position[]  = {0.4, 0.5, -0.6, 1.0};
 float light_position[]  = {0.8, 1.0, -1.2, 1.0};
+// float light_position[]  = {0.0, 1.5, -1.0, 1.0};
 float light_direction[] = {1.0f, 0.0f, 0.0f};
 GLfloat light_ambient[]     = {0.1, 0.1, 0.1, 1.0};
 GLfloat light_diffuse[]     = {0.7, 0.7, 0.7, 1.0};

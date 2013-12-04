@@ -59,7 +59,7 @@ bool debug = false;
 bool portalled = false;
 vec2 portalUV = vec2(0.0);
 
-vec4 newLight; // light + a small offset
+vec4 toLight; // vector to the light + a small offset
 float lightSize = 0.1;
 
 // ====== ret ======
@@ -520,25 +520,34 @@ void main() {
             if (softDiffuse || !skybox_enabled) {
                 vec4 colour = vec4(0.5, 0.5, 0.5, 1.0);
                 if (softDiffuse) {
-                    if (
-                        r.thing == 2 ||
-                        r.thing == 3
-                    ) {
-                        colour = vec4(1.0, 0.2, 0.2, 1.0);
-                    }
-                    else if (
-                        r.thing == 6 ||
-                        r.thing == 7
-                    ) {
-                        colour = vec4(0.9, 0.9, 0.0, 1.0);
+
+                    // colour the left wall red
+                    // and the right wall yellow
+                    switch (r.thing) {
+                        // case 0:
+                        //     if (r.hit==HIT_TYPE_SPHERE) colour = vec4(0.0, 1.0, 0.0, 1.0);
+                        //     break;
+                        case 2:
+                        case 3:
+                            colour = vec4(1.0, 0.2, 0.2, 1.0);
+                            break;
+                        case 6:
+                        case 7:
+                            colour = vec4(0.9, 0.9, 0.0, 1.0);
+                            break;
                     }
                     // r.normal += 0.5*normalize(rand3D());
                     // r.normal = normalize(r.normal);
-                    newLight = vertex_light_position + 0.09*rand3D();
-                    colour *= 0.5 * diffuse(r.normal, normalize(newLight - r.eye));
                     // r.dir += 0.5*normalize(rand3D());
                     // r.dir = normalize(r.dir);
                     r.dir = vec4(cosineWeightedDirection(r.normal.xyz), 0.0);
+                    // if (trace(r.eye, vertex_light_position + 0.09*rand3D()).hit > HIT_TYPE_NO_HIT) {
+                    //     continue;
+                    // }
+                    toLight = vertex_light_position + 0.09*rand3D() - r.eye;
+                    colour *= diffuse(r.normal, normalize(toLight));
+                    colour *= 2.0 / (length(toLight) * length(toLight));
+
                 }
                 else {
                     colour *= diffuse(r.normal);
