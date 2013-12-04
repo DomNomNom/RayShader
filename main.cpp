@@ -273,8 +273,10 @@ void display() {
             sphereMove = true;
         }
         else {
-            float sx = mouseDisX / 3000.0f;
-            float sy = mouseDisY / 3000.0f;
+            float mouseSensitivity = 5.0;
+            float sx = mouseSensitivity * -mouseDisX / 3000.0f;
+            float sy = mouseSensitivity * -mouseDisY / 3000.0f;
+
             // float cy = camRotY * DEGREES_TO_RADIANS;
             // float cx = camRotX * DEGREES_TO_RADIANS;
 
