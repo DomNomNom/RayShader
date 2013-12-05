@@ -209,28 +209,7 @@ void display() {
         framecount = 0;
     }
 
-    if (water_enabled) framesWithoutChange = 0;
-    prevFrame_ratio = 1.0 / (framesWithoutChange + 1.0);
-    framesWithoutChange += 1; // technically it should be done at the end of the frame
-
-    // switch render source and target
-    renderTarget = 1 - renderTarget;
-    renderSource = 1 - renderSource;
-    // printf("%d %d\n", rendert[0], rendert[1]);
-
-    // Render to our framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, framebufferNames[renderTarget]);
-    glViewport(0, 0, window_wd, window_ht);
-
-
-    // Always check that our framebuffer is ok
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        printf("bad framebuffer\n");
-        exit(-1);
-    }
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
 
     // //clear colour
     // glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -315,6 +294,27 @@ void display() {
 
     if (renderMode == SHADE_TRACE) {
 
+
+        if (water_enabled) framesWithoutChange = 0;
+        prevFrame_ratio = 1.0 / (framesWithoutChange + 1.0);
+        framesWithoutChange += 1; // technically it should be done at the end of the frame
+
+        // switch render source and target
+        renderTarget = 1 - renderTarget;
+        renderSource = 1 - renderSource;
+        // printf("%d %d\n", rendert[0], rendert[1]);
+
+        // Render to our framebuffer
+        glBindFramebuffer(GL_FRAMEBUFFER, framebufferNames[renderTarget]);
+        glViewport(0, 0, window_wd, window_ht);
+
+        // Always check that our framebuffer is ok
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            printf("bad framebuffer\n");
+            exit(-1);
+        }
+
+
         g_Liquid.render(liquid::RAYTRACE);
 
         // pass texture samplers
@@ -377,9 +377,38 @@ void display() {
         glEnd();
 
         shader.unbind();
+
+
+        // Render to the screen
+        glEnable(GL_TEXTURE_2D);
+        glDisable(GL_LIGHTING);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);// Render to the screen
+        glViewport(window_xOffset, 0, window_ht/aspectRatio, window_ht);
+        // render the most recent renderTextures
+        glClearColor(0.0, 0.0, 0.0, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+        glBindTexture(GL_TEXTURE_2D, renderTextures[renderTarget]);
+
+        glColor4f(1,1,1,1);
+        tv = 1.0;
+        glBegin(GL_TRIANGLES);
+            // two triangles that cover the screen
+            glTexCoord2f(0, 0); glVertex3f(-tv,-tv, 0.0);
+            glTexCoord2f(1, 0); glVertex3f( tv,-tv, 0.0);
+            glTexCoord2f(0, 1); glVertex3f(-tv, tv, 0.0);
+
+            glTexCoord2f(1, 1); glVertex3f( tv, tv, 0.0);
+            glTexCoord2f(0, 1); glVertex3f(-tv, tv, 0.0);
+            glTexCoord2f(1, 0); glVertex3f( tv,-tv, 0.0);
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+        glEnable(GL_LIGHTING);
     }
     else if (renderMode == LIQUID_ONLY) {
 
+        glEnable(GL_DEPTH_TEST);
         glEnable(GL_LIGHTING);
 
         //set the clear colour
@@ -455,32 +484,7 @@ void display() {
 
 
 
-    // Render to the screen
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_LIGHTING);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);// Render to the screen
-    glViewport(window_xOffset, 0, window_ht/aspectRatio, window_ht);
-    // render the most recent renderTextures
-    glClearColor(0.0, 0.0, 0.0, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-    glBindTexture(GL_TEXTURE_2D, renderTextures[renderTarget]);
-
-    glColor4f(1,1,1,1);
-    float tv = 1.0;
-    glBegin(GL_TRIANGLES);
-        // two triangles that cover the screen
-        glTexCoord2f(0, 0); glVertex3f(-tv,-tv, 0.0);
-        glTexCoord2f(1, 0); glVertex3f( tv,-tv, 0.0);
-        glTexCoord2f(0, 1); glVertex3f(-tv, tv, 0.0);
-
-        glTexCoord2f(1, 1); glVertex3f( tv, tv, 0.0);
-        glTexCoord2f(0, 1); glVertex3f(-tv, tv, 0.0);
-        glTexCoord2f(1, 0); glVertex3f( tv,-tv, 0.0);
-    glEnd();
-    glDisable(GL_TEXTURE_2D);
-    glEnable(GL_LIGHTING);
 
     glutSwapBuffers();
     glutPostRedisplay();
