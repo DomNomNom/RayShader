@@ -3,6 +3,8 @@ RayShader
 
 A realtime ray tracer using GLSL
 
+![Screenshot](https://raw.github.com/DomNomNom/RayShader/master/screenshot2.png)
+
 ![Screenshot](https://raw.github.com/DomNomNom/RayShader/master/screenshot.png)
 
 
