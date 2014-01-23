@@ -20,8 +20,9 @@ How to run:
  > make && ./build/RayShader
 
 
-Controlls:
+Controls:
 ----------
+ * To go into Path Tracing mode (top screenshot) press q then 6
  * Mouse drag - change camera angle
  * Mouse right drag - change ball position
  * Scrollwheel - zoom
