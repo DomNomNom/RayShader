@@ -1,7 +1,7 @@
 RayShader
 =========
 
-A realtime ray tracer using GLSL
+A realtime ray tracer using GLSL that sends all your private data to the NSA while you wait.
 
 ![Screenshot](https://raw.github.com/DomNomNom/RayShader/master/screenshot2.png)
 
