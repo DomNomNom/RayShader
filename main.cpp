@@ -59,7 +59,7 @@ GLuint prevFrame;
 bool prevFrame_enabled = true;
 int framesWithoutChange = 0;
 float prevFrame_ratio = 1.0 / (framesWithoutChange + 1.0);
-bool softDiffuse = true;
+bool softDiffuse = false;
 
 bool camMove = false;
 float camRotY = 0.0f;
@@ -81,7 +81,7 @@ float modelScale = 0.7;
 
 
 // scene specifications
-scene currentScene = SCENE_SOFT;
+scene currentScene = SCENE_BEACH;
 std::vector<vec4> vertecies;
 std::vector<int> triangles;
 std::vector<vec4> ball_pos;

@@ -163,60 +163,60 @@ bool hitAABB(vec4 eye, vec4 dir, vec3 lb, vec3 rt) {
     return true;
 }
 
-ret trace_water(vec4 eye, vec4 dir) {
-    ret r = noHit();
+// ret trace_water(vec4 eye, vec4 dir) {
+//     ret r = noHit();
 
-    // AABB optimization
-    if (! hitAABB(
-        eye,
-        dir,
-        vec3(water[0         ].x, turbulent_min, -1.0),
-        vec3(water[numWater-1].x, turbulent_max,  1.0)
-    )) {
-        return r;
-    }
+//     // AABB optimization
+//     if (! hitAABB(
+//         eye,
+//         dir,
+//         vec3(water[0         ].x, turbulent_min, -1.0),
+//         vec3(water[numWater-1].x, turbulent_max,  1.0)
+//     )) {
+//         return r;
+//     }
 
-    vec3 v = twoD(dir);
-    vec3 p = twoD(eye);
-    for (int i=0; i<numWater-1; ++i) {
-        // ray segment intersection from: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-        vec3 q  = twoD(water[i  ]);
-        vec3 q1 = twoD(water[i+1]);
-        vec3 s = q1 - q;
+//     vec3 v = twoD(dir);
+//     vec3 p = twoD(eye);
+//     for (int i=0; i<numWater-1; ++i) {
+//         // ray segment intersection from: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+//         vec3 q  = twoD(water[i  ]);
+//         vec3 q1 = twoD(water[i+1]);
+//         vec3 s = q1 - q;
 
-        float c = cross(v, s).z;
-        if (floatZero(c)) continue; // parallel case
-        float t = cross(q - p, s).z / c;
-        float u = cross(q - p, v).z / c;
+//         float c = cross(v, s).z;
+//         if (floatZero(c)) continue; // parallel case
+//         float t = cross(q - p, s).z / c;
+//         float u = cross(q - p, v).z / c;
 
-        if (u < 0.0 || u > 1.0) continue; // not in segment range
+//         if (u < 0.0 || u > 1.0) continue; // not in segment range
 
-        if (t > 0.0001 && t < r.t || r.t==0.0) {
-            vec4 intersect = eye + t*dir;
-            if (intersect.z < -1.0 || intersect.z > 1.0) continue; // z bounds
-            r.t = t;
-            r.eye = intersect;
-            r.hit = HIT_TYPE_WATER;
-            // debug = true;
-            r.normal = vec4(normalize(
-                // water_normals[i]
-                mix( // interpolate the normals smoothly
-                    water_normals[i  ],
-                    water_normals[i+1],
-                    smoothstep(0.0, 1.0, u)
-                )
-                + 0.03*vec3( // add a fake ripples
-                    cos((intersect.x+intersect.z*0.3)*13.0 + time*-3.0),
-                    0.0,
-                    cos((intersect.x)*7.0 + time*4.0) + sin(intersect.z*10.0 + time*1.0)
-                )
-            ), 0.0);
-        }
-    }
+//         if (t > 0.0001 && t < r.t || r.t==0.0) {
+//             vec4 intersect = eye + t*dir;
+//             if (intersect.z < -1.0 || intersect.z > 1.0) continue; // z bounds
+//             r.t = t;
+//             r.eye = intersect;
+//             r.hit = HIT_TYPE_WATER;
+//             // debug = true;
+//             r.normal = vec4(normalize(
+//                 // water_normals[i]
+//                 mix( // interpolate the normals smoothly
+//                     water_normals[i  ],
+//                     water_normals[i+1],
+//                     smoothstep(0.0, 1.0, u)
+//                 )
+//                 + 0.03*vec3( // add a fake ripples
+//                     cos((intersect.x+intersect.z*0.3)*13.0 + time*-3.0),
+//                     0.0,
+//                     cos((intersect.x)*7.0 + time*4.0) + sin(intersect.z*10.0 + time*1.0)
+//                 )
+//             ), 0.0);
+//         }
+//     }
 
 
-    return r;
-}
+//     return r;
+// }
 
 bool xor(bool a, bool b) {
     return (a && !b) || (b && !a);
@@ -231,86 +231,44 @@ ret trace_triangles(vec4 eye, vec4 dir) {
         vec3 edge2 = vertecies[triangles[i+2]].xyz - vertecies[triangles[i  ]].xyz;
         vec3 pvec = cross(dir.xyz, edge2);
         float det = dot(edge1, pvec);
-        if (det == 0.0) continue;
+        if (det != 0.0) {
+            float invDet = 1.0 / det;
+            vec3 tvec = vec3(eye - vertecies[triangles[i  ]]);
+            vec2 isectData; // UV vector (xy=uv)
+            isectData.x = dot(tvec, pvec) * invDet;
+            if (!(isectData.x < 0.0 || isectData.x > 1.0)) {
 
-        float invDet = 1.0 / det;
-        vec3 tvec = vec3(eye - vertecies[triangles[i  ]]);
-        vec2 isectData; // UV vector (xy=uv)
-        isectData.x = dot(tvec, pvec) * invDet;
-        if (isectData.x < 0.0 || isectData.x > 1.0) continue;
+                vec3 qvec = cross(tvec, edge1);
+                isectData.y = dot(dir.xyz, qvec) * invDet;
+                if (!(isectData.y < 0.0 || isectData.x + isectData.y > 1.0)) {
+                    float tt = dot(edge2, qvec) * invDet;
+                    vec4 intersect = eye + tt * dir; // the intersect point
+                    float t = dot(dir, intersect-eye);
+                    if (t > 0.001 && (t < r.t || r.hit==HIT_TYPE_NO_HIT)) {
+                        r.t = t;
+                        r.hit = HIT_TYPE_TRIANGLE;
+                        r.eye = intersect;
+                        r.normal = vec4(normalize(cross(edge1, edge2)), 0.0);
+                        r.thing = i / 3;
 
-        vec3 qvec = cross(tvec, edge1);
-        isectData.y = dot(dir.xyz, qvec) * invDet;
-        if (isectData.y < 0.0 || isectData.x + isectData.y > 1.0) continue;
 
-        float tt = dot(edge2, qvec) * invDet;
-        vec4 intersect = eye + tt * dir; // the intersect point
-        float t = dot(dir, intersect-eye);
-        if (t > 0.001 && (t < r.t || r.hit==HIT_TYPE_NO_HIT)) {
-            r.t = t;
-            r.hit = HIT_TYPE_TRIANGLE;
-            r.eye = intersect;
-            r.normal = vec4(normalize(cross(edge1, edge2)), 0.0);
-            r.thing = i / 3;
 
-            if (portal_enabled) {
-                // if (xor(
-                //     mod(20.0*(isectData.x), 2.0) < 1.0,
-                //     mod(20.0*(isectData.y), 2.0) < 1.0
-                // )) {
-                // if (mod(20.0*(isectData.y), 2.0) < 1.0) {
-                //     debug = true;
-                // }
-                portalUV = isectData;
-                r.hit = HIT_TYPE_PORTAL;
+                        if (portal_enabled) {
+                            portalUV = isectData;
+                            r.hit = HIT_TYPE_PORTAL;
+                        }
+
+                        // if (!portal_enabled) continue;
+                        // portalUV = isectData;
+                        // r.hit = HIT_TYPE_PORTAL;
+                    }
+                }
             }
+
         }
-        else { // no hit
-        }
 
 
-
-
-        // // baycentric coordinate method
-        // vec3 v0 = vec3(vertecies[triangles[i  ]]);
-        // vec3 v1 = vec3(vertecies[triangles[i+1]]);
-        // vec3 v2 = vec3(vertecies[triangles[i+2]]);
-        // vec4 normal = vec4(normalize(cross(v1-v0, v2-v0)), 0.0);
-
-        // float normalDot = dot(dir, normal);
-        // if (normalDot != 0.0) {
-        //     vec4 p = eye - vertecies[triangles[i]];
-        //     float t = dot(p, normal) / normalDot;
-
-        //     vec4 intersect = eye - t * dir; // the intersect point
-
-        //     vec3 P = vec3(intersect);
-        //     vec3 edge0 = v1 - v0;
-        //     vec3 edge1 = v2 - v1;
-        //     vec3 edge2 = v0 - v2;
-        //     vec3 C0 = P - v0;
-        //     vec3 C1 = P - v1;
-        //     vec3 C2 = P - v2;
-        //     vec3 N = vec3(normal);
-
-        //     if (
-        //         dot(N, cross(edge0, C0)) > 0.0 &&
-        //         dot(N, cross(edge1, C1)) > 0.0 &&
-        //         dot(N, cross(edge2, C2)) > 0.0
-        //     ) {
-        //         float offset = dot(dir, intersect-eye);
-        //         if (offset > 0.001 && (offset < closestOffset || closestType==HIT_TYPE_NO_HIT)) {
-        //             closestOffset = offset;
-        //             closestType = HIT_TYPE_TRIANGLE;
-        //             closestIntersect = intersect;
-        //             closestNormal = normal;
-        //             closestThing = i;
-        //         }
-        //         else { // no hit
-        //         }
-        //     }
-        // }
-    }
+    }  // endfor
     return r;
 }
 
@@ -359,13 +317,13 @@ ret trace(vec4 eye, vec4 dir) {
         );
     }
 
-    if (water_enabled && !hitWater) {
-        r = min_ret(
-            r,
-            trace_water(eye, dir)
-        );
-        hitWater = (r.hit == HIT_TYPE_WATER);
-    }
+    // if (water_enabled && !hitWater) {
+    //     r = min_ret(
+    //         r,
+    //         trace_water(eye, dir)
+    //     );
+    //     hitWater = (r.hit == HIT_TYPE_WATER);
+    // }
 
 
 
